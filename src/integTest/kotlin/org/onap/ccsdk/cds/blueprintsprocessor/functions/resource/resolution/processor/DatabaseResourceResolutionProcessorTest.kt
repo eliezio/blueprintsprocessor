@@ -53,7 +53,7 @@ class DatabaseResourceResolutionProcessorTest {
     lateinit var databaseResourceAssignmentProcessor: DatabaseResourceAssignmentProcessor
 
     @Test
-    fun `test database resource resolution`() {
+    fun `test database resource resolution processor db`() {
         runBlocking {
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
                     "./src/test/resources/test-blueprint/baseconfiguration")
@@ -68,6 +68,33 @@ class DatabaseResourceResolutionProcessorTest {
                 name = "service-instance-id"
                 dictionaryName = "service-instance-id"
                 dictionarySource = "processor-db"
+                property = PropertyDefinition().apply {
+                    type = "string"
+                }
+            }
+
+            val processorName = databaseResourceAssignmentProcessor.applyNB(resourceAssignment)
+            assertNotNull(processorName, "couldn't get Database resource assignment processor name")
+            println(processorName)
+        }
+    }
+
+    @Test
+    fun `test database resource resolution primary db`() {
+        runBlocking {
+            val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
+                    "./src/test/resources/test-blueprint/capability_python")
+
+            val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
+
+            databaseResourceAssignmentProcessor.raRuntimeService = resourceAssignmentRuntimeService
+            databaseResourceAssignmentProcessor.resourceDictionaries = ResourceAssignmentUtils
+                    .resourceDefinitions(bluePrintContext.rootPath)
+
+            val resourceAssignment = ResourceAssignment().apply {
+                name = "service-instance-id"
+                dictionaryName = "service-instance-id"
+                dictionarySource = "primary-db"
                 property = PropertyDefinition().apply {
                     type = "string"
                 }
