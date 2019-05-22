@@ -41,8 +41,8 @@ import org.springframework.test.context.junit4.SpringRunner
 @ComponentScan(basePackages = ["org.onap.ccsdk.cds.blueprintsprocessor", "org.onap.ccsdk.cds.controllerblueprints"])
 @DirtiesContext
 @TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./../../../../components/scripts/python/ccsdk_netconf,./../../../../components/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./../../../../components/scripts/python/ccsdk_netconf"],
+["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_netconf,./src/test/resources/scripts/python/ccsdk_blueprints",
+    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_netconf"],
         locations = ["classpath:application-test.properties"])
 class ComponentNetconfExecutorTest {
 
@@ -58,7 +58,7 @@ class ComponentNetconfExecutorTest {
                     ExecutionServiceInput::class.java)!!
 
             val bluePrintRuntimeService = BluePrintMetadataUtils.getBluePrintRuntime("1234",
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
 
             val executionContext = bluePrintRuntimeService.getExecutionContext()
 

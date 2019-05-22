@@ -43,7 +43,7 @@
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../../components/scripts/python</directory>
+            <directory>${project.basedir}/src/test/resources/scripts/python</directory>
             <outputDirectory>/opt/app/onap/scripts/jython</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>

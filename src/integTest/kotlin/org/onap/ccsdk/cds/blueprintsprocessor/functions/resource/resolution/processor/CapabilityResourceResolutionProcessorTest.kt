@@ -43,8 +43,8 @@ import kotlin.test.assertNotNull
     BluePrintScriptsServiceImpl::class,
     BlueprintJythonService::class, PythonExecutorProperty::class, MockCapabilityService::class])
 @TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./../../../../components/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./../../../../components/scripts/python/ccsdk_blueprints"])
+["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_blueprints",
+    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_blueprints"])
 class CapabilityResourceResolutionProcessorTest {
 
     @Autowired
@@ -56,7 +56,7 @@ class CapabilityResourceResolutionProcessorTest {
         runBlocking {
 
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
 
             val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
 
@@ -96,7 +96,7 @@ class CapabilityResourceResolutionProcessorTest {
         runBlocking {
 
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/capability_python")
+                    "./src/test/resources/test-blueprint/capability_python")
 
             val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
 

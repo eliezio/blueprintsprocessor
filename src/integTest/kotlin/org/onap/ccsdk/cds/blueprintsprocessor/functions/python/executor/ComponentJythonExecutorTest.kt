@@ -39,8 +39,8 @@ import org.springframework.test.context.junit4.SpringRunner
 @ContextConfiguration(classes = [PythonExecutorConfiguration::class, PythonExecutorProperty::class,
     ComponentJythonExecutor::class, MockInstanceConfiguration::class])
 @TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./../../../../components/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./../../../../components/scripts/python/ccsdk_blueprints"])
+["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_blueprints",
+    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_blueprints"])
 class ComponentJythonExecutorTest {
 
     @Autowired
@@ -54,7 +54,7 @@ class ComponentJythonExecutorTest {
                     ExecutionServiceInput::class.java)!!
 
             val bluePrintRuntimeService = BluePrintMetadataUtils.getBluePrintRuntime("1234",
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
 
             val stepMetaData: MutableMap<String, JsonNode> = hashMapOf()
             stepMetaData.putJsonElement(BluePrintConstants.PROPERTY_CURRENT_NODE_TEMPLATE, "activate-jython")

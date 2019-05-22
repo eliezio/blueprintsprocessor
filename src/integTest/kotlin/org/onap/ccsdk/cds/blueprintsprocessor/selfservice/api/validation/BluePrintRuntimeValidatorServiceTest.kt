@@ -35,7 +35,7 @@ class BluePrintRuntimeValidatorServiceTest {
 
     @Test
     fun testBlueprintRuntimeValidation() {
-        val blueprintBasePath = "./../../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration"
+        val blueprintBasePath = "./src/test/resources/test-blueprint/baseconfiguration"
         assertNotNull(bluePrintRuntimeValidatorService, " failed to initilize bluePrintRuntimeValidatorService")
 
         bluePrintRuntimeValidatorService.validateBluePrints(blueprintBasePath)
