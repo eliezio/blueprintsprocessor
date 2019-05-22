@@ -14,8 +14,8 @@ import kotlin.test.BeforeTest
 @RunWith(SpringRunner::class)
 @ContextConfiguration(classes = [BluePrintPython::class, PythonExecutorProperty::class, String::class])
 @TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./../../../../../components/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./../../../../../components/scripts/python/ccsdk_blueprints"])
+["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_blueprints",
+    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_blueprints"])
 class BlueprintPythonInterpreterProxyTest {
 
     lateinit var blueprintPythonInterpreterProxy: BlueprintPythonInterpreterProxy
@@ -25,7 +25,7 @@ class BlueprintPythonInterpreterProxyTest {
 
     @BeforeTest
     fun init() {
-        val blueprintBasePath = "./../../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration"
+        val blueprintBasePath = "./src/test/resources/test-blueprint/baseconfiguration"
         val pythonPath: MutableList<String> = arrayListOf()
         pythonPath.add(blueprintBasePath)
         pythonPath.addAll(pythonExecutorProperty.modulePaths)

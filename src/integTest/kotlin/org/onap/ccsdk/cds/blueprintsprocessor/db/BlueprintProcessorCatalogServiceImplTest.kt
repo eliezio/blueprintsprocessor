@@ -64,7 +64,7 @@ class BlueprintProcessorCatalogServiceImplTest {
     fun setup() {
         deleteDir("target", "blueprints")
         bluePrintRuntimeService = BluePrintMetadataUtils.getBluePrintRuntime(blueprintId,
-                    "./../../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
     }
 
     @AfterTest

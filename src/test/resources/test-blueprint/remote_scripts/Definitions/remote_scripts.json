@@ -1,0 +1,271 @@
+{
+  "tosca_definitions_version": "controller_blueprint_1_0_0",
+  "metadata": {
+    "template_author": "Brinda Santh Muthuramalingam",
+    "author-email": "brindasanth@in.ibm.com",
+    "user-groups": "ADMIN, OPERATION",
+    "template_name": "remote_scripts",
+    "template_version": "1.0.0",
+    "template_tags": "brinda, tosca"
+  },
+  "imports": [
+    {
+      "file": "Definitions/data_types.json"
+    },
+    {
+      "file": "Definitions/relationship_types.json"
+    },
+    {
+      "file": "Definitions/artifact_types.json"
+    },
+    {
+      "file": "Definitions/node_types.json"
+    },
+    {
+      "file": "Definitions/policy_types.json"
+    }
+  ],
+  "dsl_definitions": {
+    "remote-argument-properties": {
+      "input": {
+        "get_input": "input"
+      }
+    },
+    "ansible-argument-properties": {
+      "arg0": "-i",
+      "arg1": "Scripts/ansible/inventory.yaml",
+      "arg2": "--extra-vars",
+      "arg3": {
+        "get_attribute": [
+          "resolve-ansible-vars",
+          "",
+          "assignment-params",
+          "ansible-vars"
+        ]
+      }
+    }
+  },
+  "topology_template": {
+    "workflows": {
+      "execute-remote-python": {
+        "steps": {
+          "execute-script": {
+            "description": "Execute Remote Python Script",
+            "target": "execute-remote-python",
+            "activities": [
+              {
+                "call_operation": ""
+              }
+            ]
+          }
+        },
+        "inputs": {
+          "input": {
+            "required": false,
+            "type": "string"
+          }
+        },
+        "outputs": {
+          "prepare-environment-logs": {
+            "type": "string",
+            "value": {
+              "get_attribute": [
+                "execute-remote-python",
+                "prepare-environment-logs"
+              ]
+            }
+          },
+          "execute-command-logs": {
+            "type": "string",
+            "value": {
+              "get_attribute": [
+                "execute-remote-python",
+                "execute-command-logs"
+              ]
+            }
+          }
+        }
+      },
+      "execute-remote-ansible": {
+        "steps": {
+          "execute-script": {
+            "description": "Execute Remote Ansible Script",
+            "target": "execute-remote-ansible-process",
+            "activities": [
+              {
+                "call_operation": ""
+              }
+            ]
+          }
+        },
+        "inputs": {
+          "ip": {
+            "required": false,
+            "type": "string"
+          },
+          "username": {
+            "required": false,
+            "type": "string"
+          },
+          "password": {
+            "required": false,
+            "type": "string"
+          },
+          "execute-remote-ansible-properties": {
+            "description": "Dynamic PropertyDefinition for workflow(execute-remote-ansible).",
+            "required": true,
+            "type": "dt-execute-remote-ansible-properties"
+          }
+        },
+        "outputs": {
+          "ansible-variable-resolution": {
+            "type": "json",
+            "value": {
+              "get_attribute": [
+                "resolve-ansible-vars",
+                "assignment-params"
+              ]
+            }
+          },
+          "prepare-environment-logs": {
+            "type": "string",
+            "value": {
+              "get_attribute": [
+                "execute-remote-ansible",
+                "prepare-environment-logs"
+              ]
+            }
+          },
+          "execute-command-logs": {
+            "type": "string",
+            "value": {
+              "get_attribute": [
+                "execute-remote-ansible",
+                "execute-command-logs"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "node_templates": {
+      "execute-remote-python": {
+        "type": "component-remote-python-executor",
+        "interfaces": {
+          "ComponentRemotePythonExecutor": {
+            "operations": {
+              "process": {
+                "implementation": {
+                  "primary": "component-script"
+                },
+                "inputs": {
+                  "command": "python SamplePython.py",
+                  "packages": [
+                    {
+                      "type": "pip",
+                      "package": [
+                        "pyaml"
+                      ]
+                    }
+                  ],
+                  "argument-properties": "*remote-argument-properties"
+                }
+              }
+            }
+          }
+        },
+        "artifacts": {
+          "component-script": {
+            "type": "artifact-script-python",
+            "file": "Scripts/python/SamplePython.py"
+          }
+        }
+      },
+      "execute-remote-ansible-process": {
+        "type": "dg-generic",
+        "properties": {
+          "content": {
+            "get_artifact": [
+              "SELF",
+              "dg-execute-remote-ansible-process"
+            ]
+          },
+          "dependency-node-templates": [
+            "resolve-ansible-vars",
+            "execute-remote-ansible"
+          ]
+        },
+        "artifacts": {
+          "dg-execute-remote-ansible-process": {
+            "type": "artifact-directed-graph",
+            "file": "Plans/CONFIG_ExecAnsiblePlaybook.xml"
+          }
+        }
+      },
+      "resolve-ansible-vars": {
+        "type": "component-resource-resolution",
+        "interfaces": {
+          "ResourceResolutionComponent": {
+            "operations": {
+              "process": {
+                "inputs": {
+                  "artifact-prefix-names": [
+                    "ansible-vars"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "artifacts": {
+          "ansible-vars-template": {
+            "type": "artifact-template-velocity",
+            "file": "Templates/ansible-vars-template.vtl"
+          },
+          "ansible-vars-mapping": {
+            "type": "artifact-mapping-resource",
+            "file": "Templates/ansible-vars-mapping.json"
+          }
+        }
+      },
+      "execute-remote-ansible": {
+        "type": "component-remote-python-executor",
+        "interfaces": {
+          "ComponentRemotePythonExecutor": {
+            "operations": {
+              "process": {
+                "implementation": {
+                  "primary": "component-script"
+                },
+                "inputs": {
+                  "command": "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook first.yaml",
+                  "argument-properties": "*ansible-argument-properties",
+                  "packages": [
+                    {
+                      "type": "pip",
+                      "package": [
+                        "requirements.txt"
+                      ]
+                    },
+                    {
+                      "type": "ansible_galaxy",
+                      "package": [
+                        "juniper.junos"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "artifacts": {
+          "component-script": {
+            "type": "artifact-script-ansible",
+            "file": "Scripts/ansible/first.yaml"
+          }
+        }
+      }
+    }
+  }
+}

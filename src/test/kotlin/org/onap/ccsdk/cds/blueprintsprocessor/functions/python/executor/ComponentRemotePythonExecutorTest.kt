@@ -52,7 +52,7 @@ class ComponentRemotePythonExecutorTest {
                     ExecutionServiceInput::class.java)!!
 
             val bluePrintRuntimeService = BluePrintMetadataUtils.getBluePrintRuntime("123456-1000",
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/remote_scripts")
+                    "./src/test/resources/test-blueprint/remote_scripts")
 
             val stepMetaData: MutableMap<String, JsonNode> = hashMapOf()
             stepMetaData.putJsonElement(BluePrintConstants.PROPERTY_CURRENT_NODE_TEMPLATE, "execute-remote-python")
@@ -148,8 +148,7 @@ class ComponentRemotePythonExecutorTest {
         } returns operationOutputs
         val bluePrintRuntimeService = BluePrintMetadataUtils
                 .getBluePrintRuntime("123456-1000",
-                        "./../../../../components/model-" +
-                                "catalog/blueprint-model/test-blueprint/" +
+                        "./src/test/resources/test-blueprint/" +
                                 "remote_scripts")
         every {
             svc.resolveNodeTemplateArtifactDefinition(

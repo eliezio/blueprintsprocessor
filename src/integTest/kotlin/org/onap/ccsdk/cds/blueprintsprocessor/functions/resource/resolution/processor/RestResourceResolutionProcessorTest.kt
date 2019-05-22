@@ -54,7 +54,7 @@ class RestResourceResolutionProcessorTest {
     fun `test rest resource resolution`() {
         runBlocking {
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
 
             val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
 
@@ -87,7 +87,7 @@ class RestResourceResolutionProcessorTest {
     fun `test rest aai get resource resolution`() {
         runBlocking {
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
 
             val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
 
@@ -120,7 +120,7 @@ class RestResourceResolutionProcessorTest {
     fun `test rest aai put resource resolution`() {
         runBlocking {
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
-                    "./../../../../components/model-catalog/blueprint-model/test-blueprint/baseconfiguration")
+                    "./src/test/resources/test-blueprint/baseconfiguration")
 
             val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
 
