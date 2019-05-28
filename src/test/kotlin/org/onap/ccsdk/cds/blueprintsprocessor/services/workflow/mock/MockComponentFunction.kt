@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component
 @Configuration
 open class MockComponentConfiguration {
 
-    @Bean(name = ["component-resource-resolution", "component-netconf-executor", "component-jython-executor"])
+    @Bean(name = ["component-resource-assignment", "component-resource-resolution", "component-jython-executor"])
     open fun createComponentFunction(): AbstractComponentFunction {
         return MockComponentFunction()
     }

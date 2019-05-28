@@ -32,6 +32,7 @@ import org.onap.ccsdk.cds.controllerblueprints.management.api.BluePrintUploadInp
 import org.onap.ccsdk.cds.controllerblueprints.management.api.FileChunk
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.TestPropertySource
@@ -42,6 +43,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @RunWith(SpringRunner::class)
+@WebFluxTest
 @EnableAutoConfiguration
 @DirtiesContext
 @ComponentScan(basePackages = ["org.onap.ccsdk.cds.blueprintsprocessor", "org.onap.ccsdk.cds.controllerblueprints"])

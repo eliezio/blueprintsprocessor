@@ -26,22 +26,26 @@ import org.onap.ccsdk.cds.blueprintsprocessor.db.BluePrintDBLibConfiguration
 import org.onap.ccsdk.cds.blueprintsprocessor.db.primary.BluePrintDBLibPropertySevice
 import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceAssignmentRuntimeService
 import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.mock.MockBlueprintProcessorCatalogServiceImpl
-import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.mock.MockDatabaseConfiguration
+import org.onap.ccsdk.cds.blueprintsprocessor.db.mock.MockDatabaseConfiguration
 import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils.ResourceAssignmentUtils
 import org.onap.ccsdk.cds.controllerblueprints.core.data.PropertyDefinition
 import org.onap.ccsdk.cds.controllerblueprints.core.utils.BluePrintMetadataUtils
 import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import kotlin.test.assertNotNull
 
 @RunWith(SpringRunner::class)
+@WebFluxTest
 @ContextConfiguration(classes = [DatabaseResourceAssignmentProcessor::class, BlueprintPropertyConfiguration::class,
     BluePrintProperties::class, BluePrintDBLibPropertySevice::class, BluePrintDBLibConfiguration::class,
     BluePrintCoreConfiguration::class, MockDatabaseConfiguration::class, MockBlueprintProcessorCatalogServiceImpl::class,
     BlueprintProcessorProperties::class])
+@ComponentScan(basePackages = ["org.onap.ccsdk.cds.controllerblueprints"])
 @TestPropertySource(locations = ["classpath:application-test.properties"])
 class DatabaseResourceResolutionProcessorTest {
 
