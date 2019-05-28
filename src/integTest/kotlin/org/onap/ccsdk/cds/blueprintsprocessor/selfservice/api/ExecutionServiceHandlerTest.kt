@@ -37,14 +37,21 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.returnResult
+import org.springframework.util.Base64Utils
 import org.springframework.web.reactive.function.BodyInserters
 import java.io.File
+import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertTrue
+
+// Must match the values set on "application-test.properties" for "security.user.name" and "security.user.password"
+// respectively
+const val authUsername: String = "ccsdkapps"
+const val authPassword: String = "ccsdkapps"
 
 @RunWith(SpringRunner::class)
 @WebFluxTest
@@ -83,6 +90,8 @@ class ExecutionServiceHandlerTest {
             webTestClient
                     .post()
                     .uri("/api/v1/execution-service/upload")
+                    .header("Authorization", "Basic " + Base64Utils
+                            .encodeToString("$authUsername:$authPassword".toByteArray(UTF_8)))
                     .body(BodyInserters.fromMultipartData(body))
                     .exchange()
                     .expectStatus().isOk
@@ -105,6 +114,8 @@ class ExecutionServiceHandlerTest {
             webTestClient
                     .post()
                     .uri("/api/v1/execution-service/process")
+                    .header("Authorization", "Basic " + Base64Utils
+                            .encodeToString("$authUsername:$authPassword".toByteArray(UTF_8)))
                     .body(BodyInserters.fromObject(executionServiceInput))
                     .exchange()
                     .expectStatus().isOk
@@ -123,6 +134,8 @@ class ExecutionServiceHandlerTest {
             webTestClient
                     .post()
                     .uri("/api/v1/execution-service/process")
+                    .header("Authorization", "Basic " + Base64Utils
+                            .encodeToString("$authUsername:$authPassword".toByteArray(UTF_8)))
                     .body(BodyInserters.fromObject(executionServiceInput))
                     .exchange()
                     .expectStatus().is5xxServerError

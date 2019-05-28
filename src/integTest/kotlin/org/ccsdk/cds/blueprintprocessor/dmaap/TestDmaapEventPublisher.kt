@@ -31,8 +31,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -50,6 +54,7 @@ import kotlin.test.assertNotNull
 @EnableAutoConfiguration(exclude = [DataSourceAutoConfiguration::class])
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ContextConfiguration(classes = [BluePrintDmaapLibConfiguration::class, TestController::class,
+    SecurityConfiguration::class,
     BlueprintPropertyConfiguration::class, BluePrintProperties::class])
 @TestPropertySource(properties = ["server.port=9111",
     "blueprintsprocessor.dmaapclient.aai.topic=cds_aai",
@@ -212,4 +217,17 @@ open class TestController {
                 "}"
         return ResponseEntity(a, HttpStatus.OK)
     }
+}
+
+/**
+ * Required since 'spring-security' is on the classpath
+ */
+@Configuration
+open class SecurityConfiguration {
+
+    @Bean
+    open fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain =
+            http.csrf().disable()
+                    .authorizeExchange().anyExchange().permitAll()
+                    .and().build()
 }

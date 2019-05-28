@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 open class MockInstanceConfiguration {
-    @Bean(name = ["json-parser-service", "netconf-rpc-service"])
+    @Bean(name = ["netconf-rpc-service"])
     open fun createComponentFunction(): MockJythonService {
         return MockJythonService()
     }

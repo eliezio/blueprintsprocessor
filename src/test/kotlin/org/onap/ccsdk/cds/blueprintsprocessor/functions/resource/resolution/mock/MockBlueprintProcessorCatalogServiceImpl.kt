@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onap.ccsdk.cds.blueprintsprocessor.db.mock
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.mock
 
 import io.mockk.mockk
 import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BluePrintValidatorService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-@Configuration
+//@Configuration
 open class MockBlueprintProcessorCatalogServiceImpl {
 
-    @Bean(name = ["blueprintProcessorCatalogServiceImpl"])
+//    @Bean(name = ["blueprintProcessorCatalogServiceImpl"])
     open fun createBlueprintProcessorCatalogServiceImpl(): BluePrintValidatorService {
         return mockk<BluePrintValidatorService>()
     }

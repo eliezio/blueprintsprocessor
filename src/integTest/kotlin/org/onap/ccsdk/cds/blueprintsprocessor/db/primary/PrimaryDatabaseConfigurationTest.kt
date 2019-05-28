@@ -24,6 +24,7 @@ import org.onap.ccsdk.cds.blueprintsprocessor.db.BluePrintDBLibConfiguration
 import org.onap.ccsdk.cds.controllerblueprints.core.config.BluePrintLoadConfiguration
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
@@ -32,6 +33,7 @@ import javax.sql.DataSource
 import kotlin.test.assertNotNull
 
 @RunWith(SpringRunner::class)
+@WebFluxTest
 @ContextConfiguration(classes = [BlueprintPropertyConfiguration::class, BluePrintProperties::class,
     BluePrintDBLibConfiguration::class, BluePrintLoadConfiguration::class])
 @TestPropertySource(locations = ["classpath:application-test.properties"])

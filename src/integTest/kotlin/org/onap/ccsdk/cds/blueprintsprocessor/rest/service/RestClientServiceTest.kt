@@ -330,7 +330,7 @@ open class SecurityConfig : WebSecurityConfigurerAdapter() {
                 .roles("USER")
     }
 
-    @Bean
+//    @Bean
     open fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }

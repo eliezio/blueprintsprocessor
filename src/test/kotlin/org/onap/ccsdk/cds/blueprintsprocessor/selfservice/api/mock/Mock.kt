@@ -24,6 +24,7 @@ import org.onap.ccsdk.cds.controllerblueprints.core.asJsonPrimitive
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+/*
 
 @Configuration
 open class MockComponentConfiguration {
@@ -49,6 +50,7 @@ class MockComponentFunction : AbstractComponentFunction() {
         log.info("Recovering component..")
     }
 }
+*/
 
 open class MockResourceSource {
     @Bean(name = [

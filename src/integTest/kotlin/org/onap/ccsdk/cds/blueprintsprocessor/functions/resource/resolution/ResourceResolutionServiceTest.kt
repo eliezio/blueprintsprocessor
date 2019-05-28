@@ -34,6 +34,7 @@ import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
@@ -47,6 +48,7 @@ import kotlin.test.assertTrue
  * @author Brinda Santh DATE : 8/15/2018
  */
 @RunWith(SpringRunner::class)
+@WebFluxTest
 @ContextConfiguration(classes = [ResourceResolutionServiceImpl::class,
     InputResourceResolutionProcessor::class, DefaultResourceResolutionProcessor::class,
     DatabaseResourceAssignmentProcessor::class, RestResourceResolutionProcessor::class,
