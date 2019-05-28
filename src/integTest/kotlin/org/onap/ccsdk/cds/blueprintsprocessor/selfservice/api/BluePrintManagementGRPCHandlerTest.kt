@@ -60,12 +60,12 @@ class BluePrintManagementGRPCHandlerTest {
     fun init() {
         // Create a server, add service, start, and register for automatic graceful shutdown.
         grpcServerRule.serviceRegistry.addService(bluePrintManagementGRPCHandler)
-        deleteDir("target", "blueprints")
+        deleteDir("out", "blueprints")
     }
 
     @AfterTest
     fun cleanDir() {
-        deleteDir("target", "blueprints")
+        deleteDir("out", "blueprints")
     }
 
     @Test

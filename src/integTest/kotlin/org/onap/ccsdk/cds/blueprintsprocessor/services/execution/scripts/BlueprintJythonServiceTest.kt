@@ -45,7 +45,7 @@ class BlueprintJythonServiceTest {
     @BeforeTest
     fun init() {
         blueprintContext = mockk<BluePrintContext>()
-        every { blueprintContext.rootPath } returns normalizedPathName("target")
+        every { blueprintContext.rootPath } returns normalizedPathName("src/test/resources")
     }
     
     @Test
@@ -62,7 +62,7 @@ class BlueprintJythonServiceTest {
 
     @Test
     fun testGetAbstractJythonComponent() {
-            val scriptInstance = "test-classes/scripts/SamplePythonComponentNode.py"
+            val scriptInstance = "scripts/SamplePythonComponentNode.py"
 
             val abstractJythonComponent = blueprintJythonService.jythonComponentInstance(blueprintContext, scriptInstance)
 

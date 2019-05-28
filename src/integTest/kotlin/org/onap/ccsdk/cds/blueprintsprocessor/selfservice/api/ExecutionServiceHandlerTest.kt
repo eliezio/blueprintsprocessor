@@ -67,12 +67,12 @@ class ExecutionServiceHandlerTest {
 
     @BeforeTest
     fun init() {
-        deleteDir("target", "blueprints")
+        deleteDir("out", "blueprints")
     }
 
     @AfterTest
     fun cleanDir() {
-        deleteDir("target", "blueprints")
+        deleteDir("out", "blueprints")
     }
 
 

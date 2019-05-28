@@ -64,14 +64,14 @@ class BlueprintProcessorCatalogServiceImplTest {
 
     @BeforeTest
     fun setup() {
-        deleteDir("target", "blueprints")
+        deleteDir("out", "blueprints")
         bluePrintRuntimeService = BluePrintMetadataUtils.getBluePrintRuntime(blueprintId,
                     "./src/test/resources/test-blueprint/baseconfiguration")
     }
 
     @AfterTest
     fun cleanDir() {
-        deleteDir("target", "blueprints")
+        deleteDir("out", "blueprints")
     }
 
     @Test
