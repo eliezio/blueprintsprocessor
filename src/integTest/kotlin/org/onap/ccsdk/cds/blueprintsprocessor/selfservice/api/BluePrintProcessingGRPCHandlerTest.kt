@@ -22,7 +22,6 @@ import com.google.protobuf.util.JsonFormat
 import io.grpc.stub.StreamObserver
 import io.grpc.testing.GrpcServerRule
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,14 +34,15 @@ import org.onap.ccsdk.cds.controllerblueprints.processing.api.ExecutionServiceOu
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import kotlin.test.BeforeTest
 
-@Ignore
 @RunWith(SpringRunner::class)
+@WebFluxTest
 @DirtiesContext
 @EnableAutoConfiguration
 @ComponentScan(basePackages = ["org.onap.ccsdk.cds.blueprintsprocessor", "org.onap.ccsdk.cds.controllerblueprints"])
