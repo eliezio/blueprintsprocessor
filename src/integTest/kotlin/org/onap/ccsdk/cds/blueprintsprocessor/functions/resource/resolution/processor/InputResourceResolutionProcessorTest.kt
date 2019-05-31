@@ -15,10 +15,11 @@
  */
 package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor
 
+import com.fasterxml.jackson.databind.node.TextNode
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceAssignmentRuntimeService
 import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils.ResourceAssignmentUtils
 import org.onap.ccsdk.cds.controllerblueprints.core.data.PropertyDefinition
@@ -28,7 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
-import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @RunWith(SpringRunner::class)
 @ContextConfiguration(classes = [InputResourceResolutionProcessor::class])
@@ -38,20 +39,20 @@ class InputResourceResolutionProcessorTest {
     @Autowired
     lateinit var inputResourceResolutionProcessor: InputResourceResolutionProcessor
 
-    @Ignore
     @Test
-    fun `test input resource resolution`() {
+    fun `InputResourceResolutionProcessor should be able to resolve a value for an input parameter`() {
         runBlocking {
             val bluePrintContext = BluePrintMetadataUtils.getBluePrintContext(
                     "./src/test/resources/test-blueprint/baseconfiguration")
 
-            val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService("1234", bluePrintContext)
+            val resourceAssignmentRuntimeService = Mockito.spy(ResourceAssignmentRuntimeService("1234", bluePrintContext))
 
             inputResourceResolutionProcessor.raRuntimeService = resourceAssignmentRuntimeService
-            inputResourceResolutionProcessor.resourceDictionaries = ResourceAssignmentUtils
-                    .resourceDefinitions(bluePrintContext.rootPath)
+            inputResourceResolutionProcessor.resourceDictionaries = ResourceAssignmentUtils.resourceDefinitions(bluePrintContext.rootPath)
 
-            //TODO ("Mock the input Values")
+            // mocking input
+            val textNode = TextNode("any value")
+            Mockito.doReturn(textNode).`when`(resourceAssignmentRuntimeService).getInputValue(any())
 
             val resourceAssignment = ResourceAssignment().apply {
                 name = "rr-name"
@@ -63,8 +64,17 @@ class InputResourceResolutionProcessorTest {
             }
 
             val processorName = inputResourceResolutionProcessor.applyNB(resourceAssignment)
-            assertNotNull(processorName, "couldn't get Input resource assignment processor name")
-            println(processorName)
+            assertTrue(processorName, "An error occurred while trying to test the InputResourceResolutionProcessor")
         }
+    }
+
+    // Need to wrap the Mockito.any, because otherwise it will throw the exception
+    //      java.lang.IllegalStateException: Mockito.any() must not be nul
+    // This happens because Kotlin checks for nullability and Mockito.any() returns null in their implementations. Kotlin
+    // detects the potential null pointer and throws an exception. By wrapping with a custom any() that returns null as T,
+    // this issue is avoided.
+    private fun <T> any(): T {
+        Mockito.any<T>()
+        return null as T
     }
 }
