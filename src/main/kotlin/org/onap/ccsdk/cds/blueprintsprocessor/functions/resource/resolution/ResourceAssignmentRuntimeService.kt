@@ -5,7 +5,7 @@ import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
 import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintContext
 import org.onap.ccsdk.cds.controllerblueprints.core.service.DefaultBluePrintRuntimeService
 
-class ResourceAssignmentRuntimeService(private var id: String, private var bluePrintContext: BluePrintContext)
+open class ResourceAssignmentRuntimeService(private var id: String, private var bluePrintContext: BluePrintContext)
     : DefaultBluePrintRuntimeService(id, bluePrintContext) {
 
     private lateinit var resolutionId: String
