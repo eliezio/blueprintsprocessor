@@ -132,7 +132,6 @@ dependencies {
     integTestImplementation("org.mock-server", "mockserver-netty", mockServerVersion)
     integTestImplementation("io.grpc", "grpc-testing", grpcVersion)
     integTestImplementation("org.springframework.boot", "spring-boot-starter-test")
-    integTestImplementation("org.apache.tomcat.embed", "tomcat-embed-core")
     integTestImplementation("org.spockframework", "spock-spring", spockFrameworkVersion)
     integTestImplementation("ch.qos.logback", "logback-classic")
 
