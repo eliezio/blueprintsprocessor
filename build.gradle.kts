@@ -60,7 +60,6 @@ repositories {
     jcenter()
     maven { url = uri(onapReleasesRepo) }
     maven { url = uri(onapPublicRepo) }
-    mavenLocal()
     maven { url = uri(onapSnapshotsRepo) }
 }
 
