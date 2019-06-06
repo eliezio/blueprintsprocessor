@@ -39,6 +39,11 @@ configurations {
     compile {
         exclude(module = "slf4j-simple")
     }
+    integTestImplementation {
+        // Conflicts with "com.vaadin.external.google:android-json".
+        // See https://github.com/spring-projects/spring-boot/issues/8706
+        exclude(group = "org.json", module = "json")
+    }
 }
 
 val ccsdkVersion = "0.5.0-SNAPSHOT"
@@ -121,6 +126,15 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
+/*
+ * All Archives
+ */
+tasks.withType<AbstractArchiveTask> {
+    //** reproducible build
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+}
+
 tasks.withType<Test> {
     // JVM flags to speed-up test executions
     jvmArgs("-noverify", "-XX:TieredStopAtLevel=1")
@@ -161,9 +175,9 @@ springBoot {
 }
 
 /*
- * All Tests
+ * Unit Tests
  */
-tasks.withType<Test> {
+tasks.test {
     jvmArgs("-noverify")
 }
 
@@ -181,6 +195,8 @@ tasks.integrationTest {
  */
 // Why we can't use just "task.jacocoTestReport": https://github.com/gradle/kotlin-dsl/issues/1176#issuecomment-435816812
 tasks.getByName<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.withType<Test>().asIterable())
+
     executionData(file("$buildDir/jacoco/test.exec"), file("$buildDir/jacoco/integrationTest.exec"))
 
     reports {
@@ -198,7 +214,17 @@ tasks.getByName<JacocoReport>("jacocoTestReport") {
 }
 
 tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+
     executionData(tasks.jacocoTestReport.get().executionData)
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
+tasks.reportCoverage {
+    dependsOn(tasks.jacocoTestReport)
 }
 
 /*
@@ -229,8 +255,7 @@ jib {
     }
     to {
         val tagVersion = version.toString().substringBefore('-')
-        image = listOf(dockerRegistry, dockerGroup ?: defaultDockerGroup, "${project.name}:$tagVersion")
-                .filterNotNull()
+        image = listOfNotNull(dockerRegistry, dockerGroup ?: defaultDockerGroup, "${project.name}:$tagVersion")
                 .joinToString("/")
     }
     extraDirectories {
@@ -249,25 +274,19 @@ jib {
     }
 }
 
+tasks.jibDockerBuild {
+    dependsOn(tasks.build)
+}
+
 /*
- * Improve Tasks Dependencies
+ * Clean-up
  */
-tasks {
+tasks.register<Delete>("deletePyClasses") {
+    delete(fileTree("src/test/resources") {
+        include("**/*\$py.class")
+    })
+}
 
-    jacocoTestReport {
-        dependsOn(withType<Test>().asIterable())
-    }
-
-    jacocoTestCoverageVerification {
-        dependsOn(jacocoTestReport)
-    }
-
-    // redundant since check already depends on reportCoverage
-    check {
-        dependsOn(jacocoTestReport, jacocoTestCoverageVerification)
-    }
-
-    jibDockerBuild {
-        dependsOn(build)
-    }
+tasks.clean {
+    dependsOn("deletePyClasses")
 }
