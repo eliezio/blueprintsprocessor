@@ -28,9 +28,7 @@ import kotlin.test.BeforeTest
 
 @RunWith(SpringRunner::class)
 @ContextConfiguration(classes = [BluePrintPython::class, PythonExecutorProperty::class, String::class])
-@TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_blueprints"])
+@TestPropertySource(locations = ["classpath:application-test.properties"])
 class BlueprintPythonHostTest {
 
     lateinit var blueprintPythonHost: BlueprintPythonHost
