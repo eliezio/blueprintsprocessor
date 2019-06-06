@@ -67,23 +67,18 @@ class ComponentFunctionScriptingService(private val applicationContext: Applicat
 
     suspend fun <T : BlueprintFunctionNode<*, *>> scriptInstance(bluePrintContext: BluePrintContext, scriptType: String,
                                                          scriptClassReference: String): T {
-        var scriptComponent: T? = null
-
-        when (scriptType) {
+        return when (scriptType) {
             BluePrintConstants.SCRIPT_INTERNAL -> {
-                scriptComponent = bluePrintScriptsService.scriptInstance<T>(scriptClassReference)
+                bluePrintScriptsService.scriptInstance(scriptClassReference)
             }
             BluePrintConstants.SCRIPT_KOTLIN -> {
-                scriptComponent = bluePrintScriptsService.scriptInstance<T>(bluePrintContext, scriptClassReference, false)
+                bluePrintScriptsService.scriptInstance(bluePrintContext, scriptClassReference, false)
             }
             BluePrintConstants.SCRIPT_JYTHON -> {
-                scriptComponent = blueprintJythonService.jythonComponentInstance(bluePrintContext, scriptClassReference) as T
+                blueprintJythonService.jythonComponentInstance(bluePrintContext, scriptClassReference) as T
             }
-            else -> {
-                throw BluePrintProcessorException("script type($scriptType) is not supported")
-            }
+            else -> throw BluePrintProcessorException("script type($scriptType) is not supported")
         }
-        return scriptComponent
     }
 
 }

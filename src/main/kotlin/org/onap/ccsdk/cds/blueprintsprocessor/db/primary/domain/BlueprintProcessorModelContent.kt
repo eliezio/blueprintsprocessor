@@ -77,15 +77,15 @@ class BlueprintProcessorModelContent : Serializable {
                 "]"
     }
 
-    override fun equals(o: Any?): Boolean {
+    override fun equals(other: Any?): Boolean {
 
-        if (o === this) {
+        if (other === this) {
             return true
         }
-        if (o !is BlueprintProcessorModelContent) {
+        if (other !is BlueprintProcessorModelContent) {
             return false
         }
-        val blueprintModelContent = o as BlueprintProcessorModelContent?
+        val blueprintModelContent = other as BlueprintProcessorModelContent?
         return (id == blueprintModelContent!!.id && name == blueprintModelContent.name
                 && contentType == blueprintModelContent.contentType)
     }

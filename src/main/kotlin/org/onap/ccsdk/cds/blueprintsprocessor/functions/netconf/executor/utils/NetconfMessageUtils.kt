@@ -294,12 +294,12 @@ class NetconfMessageUtils {
         }
 
         fun formatRPCRequest(request: String, messageId: String, deviceCapabilities: Set<String>): String {
-            var request = request
-            request = NetconfMessageUtils.formatNetconfMessage(deviceCapabilities, request)
-            request = NetconfMessageUtils.formatXmlHeader(request)
-            request = NetconfMessageUtils.formatRequestMessageId(request, messageId)
+            var req = request
+            req = formatNetconfMessage(deviceCapabilities, req)
+            req = formatXmlHeader(req)
+            req = formatRequestMessageId(req, messageId)
 
-            return request
+            return req
         }
 
         /**
@@ -311,13 +311,13 @@ class NetconfMessageUtils {
          * @return formated message
          */
         fun formatNetconfMessage(deviceCapabilities: Set<String>, message: String): String {
-            var message = message
+            var msg = message
             if (deviceCapabilities.contains(RpcMessageUtils.NETCONF_11_CAPABILITY)) {
-                message = formatChunkedMessage(message)
-            } else if (!message.endsWith(RpcMessageUtils.END_PATTERN)) {
-                message = message + NEW_LINE + RpcMessageUtils.END_PATTERN
+                msg = formatChunkedMessage(msg)
+            } else if (!msg.endsWith(RpcMessageUtils.END_PATTERN)) {
+                msg = msg + NEW_LINE + RpcMessageUtils.END_PATTERN
             }
-            return message
+            return msg
         }
 
         /**
@@ -327,18 +327,18 @@ class NetconfMessageUtils {
          * @return formated message
          */
         fun formatChunkedMessage(message: String): String {
-            var message = message
-            if (message.endsWith(RpcMessageUtils.END_PATTERN)) {
+            var msg = message
+            if (msg.endsWith(RpcMessageUtils.END_PATTERN)) {
                 // message given had Netconf 1.0 EOM pattern -> remove
-                message = message.substring(0, message.length - RpcMessageUtils.END_PATTERN.length)
+                msg = msg.substring(0, msg.length - RpcMessageUtils.END_PATTERN.length)
             }
-            if (!message.startsWith(RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH)) {
+            if (!msg.startsWith(RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH)) {
                 // chunk encode message
-                message =
-                    (RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH + message.toByteArray(UTF_8).size + RpcMessageUtils.NEW_LINE + message + RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH + RpcMessageUtils.HASH
+                msg =
+                    (RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH + msg.toByteArray(UTF_8).size + RpcMessageUtils.NEW_LINE + msg + RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH + RpcMessageUtils.HASH
                             + RpcMessageUtils.NEW_LINE)
             }
-            return message
+            return msg
         }
 
         /**
@@ -348,31 +348,31 @@ class NetconfMessageUtils {
          * @return XML RPC message
          */
         fun formatXmlHeader(request: String): String {
-            var request = request
-            if (!request.contains(RpcMessageUtils.XML_HEADER)) {
-                if (request.startsWith(RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH)) {
-                    request =
-                        request.split("<".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0] + RpcMessageUtils.XML_HEADER + request.substring(
-                            request.split("<".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].length)
+            var req = request
+            if (!req.contains(RpcMessageUtils.XML_HEADER)) {
+                if (req.startsWith(RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH)) {
+                    req =
+                        req.split("<".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0] + RpcMessageUtils.XML_HEADER + req.substring(
+                            req.split("<".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].length)
                 } else {
-                    request = RpcMessageUtils.XML_HEADER + "\n" + request
+                    req = RpcMessageUtils.XML_HEADER + "\n" + req
                 }
             }
-            return request
+            return req
         }
 
         fun formatRequestMessageId(request: String, messageId: String): String {
-            var request = request
-            if (request.contains(RpcMessageUtils.MESSAGE_ID_STRING)) {
-                request =
-                    request.replaceFirst((RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.NUMBER_BETWEEN_QUOTES_MATCHER).toRegex(),
+            var req = request
+            if (req.contains(RpcMessageUtils.MESSAGE_ID_STRING)) {
+                req =
+                    req.replaceFirst((RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.NUMBER_BETWEEN_QUOTES_MATCHER).toRegex(),
                         RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.QUOTE + messageId + RpcMessageUtils.QUOTE)
-            } else if (!request.contains(RpcMessageUtils.MESSAGE_ID_STRING) && !request.contains(
+            } else if (!req.contains(RpcMessageUtils.MESSAGE_ID_STRING) && !req.contains(
                     RpcMessageUtils.HELLO)) {
-                request = request.replaceFirst(RpcMessageUtils.END_OF_RPC_OPEN_TAG.toRegex(),
+                req = req.replaceFirst(RpcMessageUtils.END_OF_RPC_OPEN_TAG.toRegex(),
                     RpcMessageUtils.QUOTE_SPACE + RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.QUOTE + messageId + RpcMessageUtils.QUOTE + ">")
             }
-            return updateRequestLength(request)
+            return updateRequestLength(req)
         }
 
         fun updateRequestLength(request: String): String {
@@ -385,8 +385,7 @@ class NetconfMessageUtils {
                     request.split(RpcMessageUtils.MSGLEN_REGEX_PATTERN.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()[1].split(
                         (NEW_LINE + RpcMessageUtils.HASH + RpcMessageUtils.HASH + NEW_LINE).toRegex()).dropLastWhile(
                         { it.isEmpty() }).toTypedArray()[0]
-                var newLen = 0
-                newLen = firstBlock.toByteArray(UTF_8).size
+                val newLen = firstBlock.toByteArray(UTF_8).size
                 if (oldLen != newLen) {
                     return NEW_LINE + RpcMessageUtils.HASH + newLen + NEW_LINE + rpcWithEnding
                 }

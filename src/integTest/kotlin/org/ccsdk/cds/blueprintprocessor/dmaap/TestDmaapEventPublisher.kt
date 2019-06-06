@@ -18,7 +18,7 @@
  * ============LICENSE_END=========================================================
  */
 
-package org.ccsdk.apps.blueprintprocessor.dmaap
+package org.ccsdk.cds.blueprintprocessor.dmaap
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.Test
@@ -67,128 +67,88 @@ class TestDmaapEventPublisher {
     @Autowired
     lateinit var dmaapService : BluePrintDmaapLibPropertyService
 
-    /**
-     * Tests the event properties being set properly and sent as request.
-     */
     @Test
-    fun testEventProperties() {
-        val strList = mutableListOf<String>()
+    fun `Tests the event properties being set properly and sent as request`() {
         val dmaapClient = dmaapService.blueprintDmaapClientService("aai")
 
-        strList.add("{\n" +
-                "    \"a\" : \"hello\"\n" +
-                "}")
+        val strList = listOf("""{ "a" : "hello" }""")
         dmaapClient.sendMessage(strList)
         val msgs = dmaapClient.close(2)
-        assertEquals(msgs!!.size, 1)
-        val topic1 = msgs.get(0)
-        assertEquals(topic1!!.size, 0)
+        assertEquals(1, msgs!!.size)
+        val topic1 = msgs[0]
+        assertEquals(0, topic1.size)
     }
 
-    /**
-     * Tests the event properties being set properly and sent as request with
-     * single message.
-     */
     @Test
-    fun testEventPropertiesWithSingleMsg() {
+    fun `Tests the event properties being set properly and sent as request with single message`() {
         val dmaapClient = dmaapService.blueprintDmaapClientService("aai")
-        val str : String = "{\n" +
-                "    \"a\" : \"hello\"\n" +
-                "}"
+        val str = """{ "a" : "hello" }"""
         dmaapClient.sendMessage(str)
         val msgs = dmaapClient.close(2)
-        assertEquals(msgs!!.size, 1)
-        val topic1 = msgs.get(0)
-        assertEquals(topic1!!.size, 0)
+        assertEquals(1, msgs!!.size)
+        val topic1 = msgs[0]
+        assertEquals(0, topic1.size)
     }
 
-    /**
-     * Tests the event properties with multiple topics.
-     */
     @Test
-    fun testMultiTopicProperties() {
-        val strList = mutableListOf<String>()
+    fun `Tests the event properties with multiple topics`() {
         val dmaapClient = dmaapService.blueprintDmaapClientService("multi")
 
-        strList.add("{\n" +
-                "    \"a\" : \"hello\"\n" +
-                "}")
+        val strList = listOf("""{ "a" : "hello" }""")
         dmaapClient.sendMessage(strList)
         val msgs = dmaapClient.close(2)
-        assertEquals(msgs!!.size, 2)
-        val topic1 = msgs.get(0)
-        assertEquals(topic1!!.size, 0)
-        val topic2 = msgs.get(1)
-        assertEquals(topic2!!.size, 0)
+        assertEquals(2, msgs!!.size)
+        val topic1 = msgs[0]
+        assertEquals(0, topic1.size)
+        val topic2 = msgs[1]
+        assertEquals(0, topic2.size)
     }
 
 
-    /**
-     * Tests the event properties with multiple topics with JSON node as input.
-     */
     @Test
-    fun testMultiTopicPropertiesWithJsonInput() {
-        val jsonString = "{\n" +
-                "    \"topic\" : \"cds_json1,cds_json2\",\n" +
-                "    \"type\" : \"HTTPNOAUTH\",\n" +
-                "    \"host\" : \"127.0.0.1:9111\"\n" +
-                "}"
+    fun `Tests the event properties with multiple topics with JSON node as input`() {
+        val jsonString = """{
+    "topic" : "cds_json1,cds_json2",
+    "type" : "HTTPNOAUTH",
+    "host" : "127.0.0.1:9111"
+}"""
         val mapper = ObjectMapper()
         val node = mapper.readTree(jsonString)
-        val strList = mutableListOf<String>()
         val dmaapClient = dmaapService.blueprintDmaapClientService(node)
 
-        strList.add("{\n" +
-                "    \"a\" : \"hello\"\n" +
-                "}")
+        val strList = listOf("""{ "a" : "hello" }""")
         dmaapClient.sendMessage(strList)
         val msgs = dmaapClient.close(2)
-        assertEquals(msgs!!.size, 2)
-        val topic1 = msgs.get(0)
-        assertEquals(topic1!!.size, 0)
-        val topic2 = msgs.get(1)
-        assertEquals(topic2!!.size, 0)
+        assertEquals(2, msgs!!.size)
+        val topic1 = msgs[0]
+        assertEquals(0, topic1.size)
+        val topic2 = msgs[1]
+        assertEquals(0, topic2.size)
     }
 
 
-    /**
-     * Tests the event properties with multiple messages.
-     */
     @Test
-    fun testMultiMsgsProperties() {
-        val strList = mutableListOf<String>()
+    fun `Tests the event properties with multiple messages`() {
         val dmaapClient = dmaapService.blueprintDmaapClientService("aai")
 
-        strList.add("{\n" +
-                "    \"a\" : \"hello\"\n" +
-                "}")
-        strList.add("{\n" +
-                "    \"a\" : \"second\"\n" +
-                "}")
+        val strList = listOf("""{ "a" : "hello" }""", """{ "a" : "second" }""")
         dmaapClient.sendMessage(strList)
         val msgs = dmaapClient.close(2)
-        assertEquals(msgs!!.size, 1)
-        val topic1 = msgs.get(0)
-        assertEquals(topic1!!.size, 0)
+        assertEquals(1, msgs!!.size)
+        val topic1 = msgs[0]
+        assertEquals(0, topic1.size)
     }
 
-    /**
-     * Tests the DMAAP client properties generated with the complete prefix.
-     */
     @Test
-    fun testDmaapClientProperties() {
+    fun `Tests the DMAAP client properties generated with the complete prefix`() {
         val properties = dmaapService.dmaapClientProperties(
             "blueprintsprocessor.dmaapclient.aai")
         assertNotNull(properties, "failed to create property bean")
-        assertNotNull(properties.host, "failed to get url property" +
-                " in property bean")
+        assertNotNull(properties.host, "failed to get url property in property bean")
     }
 
-    /**
-     * Tests the blueprint DMAAP client service with only selector prefix.
-     */
     @Test
-    fun testBlueprintDmaapClientService() {
+    fun `Tests the blueprint DMAAP client service with only selector prefix`() {
         val blueprintDmaapClientService =
             dmaapService.blueprintDmaapClientService("aai")
         assertNotNull(blueprintDmaapClientService,
@@ -210,11 +170,8 @@ open class TestController {
     @PostMapping(path = ["/{topic}"])
     fun postTopic(@PathVariable(value = "topic") topic : String):
             ResponseEntity<Any> {
-        var a = "{\n" +
-                "    \"message\" : \"The message is published into $topic " +
-                "topic\"\n" +
-                "}"
-        return ResponseEntity(a, HttpStatus.OK)
+        val msg = """{ "message" : "The message is published into $topic topic" }"""
+        return ResponseEntity(msg, HttpStatus.OK)
     }
 }
 
