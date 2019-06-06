@@ -42,10 +42,7 @@ import org.springframework.test.context.junit4.SpringRunner
 @EnableAutoConfiguration
 @ComponentScan(basePackages = ["org.onap.ccsdk.cds.blueprintsprocessor", "org.onap.ccsdk.cds.controllerblueprints"])
 @DirtiesContext
-@TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_netconf,./src/test/resources/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_netconf"],
-        locations = ["classpath:application-test.properties"])
+@TestPropertySource(locations = ["classpath:application-test.properties"])
 class ComponentNetconfExecutorTest {
 
     @Autowired

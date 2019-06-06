@@ -38,9 +38,7 @@ import org.springframework.test.context.junit4.SpringRunner
 @RunWith(SpringRunner::class)
 @ContextConfiguration(classes = [PythonExecutorConfiguration::class, PythonExecutorProperty::class,
     ComponentJythonExecutor::class, MockInstanceConfiguration::class])
-@TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_blueprints"])
+@TestPropertySource(locations = ["classpath:application-test.properties"])
 class ComponentJythonExecutorTest {
 
     @Autowired

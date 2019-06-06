@@ -42,9 +42,7 @@ import kotlin.test.assertNotNull
 @ContextConfiguration(classes = [CapabilityResourceResolutionProcessor::class, ComponentFunctionScriptingService::class,
     BluePrintScriptsServiceImpl::class,
     BlueprintJythonService::class, PythonExecutorProperty::class, MockCapabilityService::class])
-@TestPropertySource(properties =
-["blueprints.processor.functions.python.executor.modulePaths=./src/test/resources/scripts/python/ccsdk_blueprints",
-    "blueprints.processor.functions.python.executor.executionPath=./src/test/resources/scripts/python/ccsdk_blueprints"])
+@TestPropertySource(locations = ["classpath:application-test.properties"])
 class CapabilityResourceResolutionProcessorTest {
 
     @Autowired
