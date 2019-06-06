@@ -93,7 +93,6 @@ class BlueprintJythonService(val pythonExecutorProperty: PythonExecutorProperty,
         val artifactDefinition = bluePrintRuntimeService.resolveNodeTemplateArtifactDefinition(nodeTemplateName, artifactName)
 
         val pythonFileName = artifactDefinition.file
-                ?: throw BluePrintProcessorException("missing file name for node template ($nodeTemplateName)'s artifactName($artifactName)")
 
         val pythonClassName = FilenameUtils.getBaseName(pythonFileName)
         log.info("Getting Jython Script Class($pythonClassName)")

@@ -234,13 +234,11 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
             payload.put(INPUT_INVENTORY, inventoryKeyId)
         }
         val askVariablesOnLaunch = jtLaunchReqs.at("/ask_variables_on_launch").asBoolean()
-        if (askVariablesOnLaunch && extraArgs != null) {
-            payload.put("extra_vars", extraArgs)
+        if (askVariablesOnLaunch) {
+            payload.set("extra_vars", extraArgs)
         }
 
-        val strPayload = "$payload"
-
-        return strPayload
+        return payload.toString()
     }
 
     private fun resolveInventoryIdByName(awxClient : BlueprintWebClientService, inventoryProp: String): Int? {

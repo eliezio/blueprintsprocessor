@@ -57,7 +57,7 @@ class BlueprintSshClientServiceTest {
     @Test
     fun testBasicAuthSshClientService() {
         runBlocking {
-            val sshServer = setupTestServer("localhost", 52815, "root", "dummyps")
+            val sshServer = setupTestServer("localhost", 52815)
             sshServer.start()
             println(sshServer)
             val bluePrintSshLibPropertyService = bluePrintSshLibPropertyService.blueprintSshClientService("sample")
@@ -69,12 +69,12 @@ class BlueprintSshClientServiceTest {
         }
     }
 
-    private fun setupTestServer(host: String, port: Int, userName: String, password: String): SshServer {
+    private fun setupTestServer(host: String, port: Int): SshServer {
         val sshd = SshServer.setUpDefaultServer()
         sshd.port = port
         sshd.host = host
         sshd.keyPairProvider = createTestHostKeyProvider()
-        sshd.passwordAuthenticator = BogusPasswordAuthenticator(userName, password)
+        sshd.passwordAuthenticator = BogusPasswordAuthenticator()
         sshd.publickeyAuthenticator = AcceptAllPublickeyAuthenticator.INSTANCE
         //sshd.shellFactory = EchoShellFactory()
         sshd.commandFactory = ProcessShellCommandFactory.INSTANCE
@@ -89,7 +89,7 @@ class BlueprintSshClientServiceTest {
     }
 }
 
-class BogusPasswordAuthenticator(userName: String, password: String) : PasswordAuthenticator {
+class BogusPasswordAuthenticator : PasswordAuthenticator {
     override fun authenticate(username: String, password: String, serverSession: ServerSession): Boolean {
         assertEquals(username, "root", "failed to match username")
         assertEquals(password, "dummyps", "failed to match password")

@@ -123,7 +123,6 @@ class AbstractComponentFunctionTest {
      * Mocked input for abstract function test.
      */
     private fun getMockedContext() {
-        val operationOutputs = hashMapOf<String, JsonNode>()
         every {
             blueprintContext.name()
         } returns "SampleTest"

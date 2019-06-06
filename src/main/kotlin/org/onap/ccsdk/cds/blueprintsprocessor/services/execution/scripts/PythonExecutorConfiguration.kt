@@ -44,8 +44,7 @@ class PythonExecutorConstants {
     }
 }
 
-open class BluePrintPython(executablePath: String, blueprintPythonPlatform: MutableList<String>,
-                           val argv: MutableList<String>){
+open class BluePrintPython(executablePath: String, blueprintPythonPlatform: List<String>, val argv: List<String>) {
     lateinit var moduleName: String
     lateinit var pythonClassName: String
     lateinit var content: String
