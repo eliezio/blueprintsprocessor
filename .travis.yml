@@ -1,0 +1,27 @@
+language: java
+
+jdk:
+- oraclejdk8
+
+before_cache:
+- rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+
+install: true
+
+before_script:
+- _JAVA_OPTIONS=
+
+script: "./gradle/buildViaTravis.sh"
+
+after_success:
+- "./gradlew coveralls"
+
+notifications:
+  slack:
+    secure: EWGZ8roA3MGJjPEi/gjvqpug92yGdkN8wfiLHB31QeM7+QWR/7lwZkIzCvQoJFxFTAOBgY1EfMYlQXbSJqO/bmwMDkOL3STlDw7DQLVnz/QyIiYYQ8ZnzIQscFhoVYBA81QD1n30SY7W8pgFZc5HpktUAIbm9DfZBNRoe4G1WNkY9G2C9c+7hSe5ar9aNwyCXF4LA8XhsqriQxj+3bBnes5Q1whbVXW+NNdv8zynEuR6YKD3D4XA2aSzD8VA5hG2YEiJP/ZALSWDQxQERTe29Lv4bSeZngNzdCHLD5IltUUUsMDDYUkz94K6mouPecVi5ogNuSdg3ma22cn9RAqqtPBcbJ2mA/te49k7sfTYRXueJVK3wrnjIi9bSd3PC+QPEZWYpBj4wPBjiKv6UyZErROxVZOUXWVgoSTF5y42t0lQZmxJk56e8jfPUyvn4a8uONH3GrFkKV8s5YFTEyyOOWsGb/JIFmgovd3OsYjPZ47L2tntcf82X7ZVVAnVWD4aGYhoXR2M1u88pBsBXV0o16VM9i71IpPHZBHHo8/OnDLc8VZA8FzXDJ1Q4YQD0M4wnTL6EfEGuOaJA20eAeicntaXTPgO6rn7fs1Loeip6ecW77XfV5TFlAhoShacPhHMN+52+0gdcKrWrVeCPc3g2JjZIXIQ+aSVcZfcqfwnFhc=

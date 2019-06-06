@@ -17,6 +17,7 @@ plugins {
     // Quality / Documentation Plugins
     id("com.adarshr.test-logger").version("1.7.0")
     id("com.github.ksoichiro.console.reporter").version("0.6.2")
+    id("com.github.kt3k.coveralls").version("2.8.4")
 
     id("com.google.cloud.tools.jib").version("1.2.0")
 }
