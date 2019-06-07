@@ -20,7 +20,7 @@ before_script:
 script: "./gradle/buildViaTravis.sh"
 
 after_success:
-- "./gradlew coveralls"
+- bash <(curl -s https://codecov.io/bash)
 
 notifications:
   slack:
