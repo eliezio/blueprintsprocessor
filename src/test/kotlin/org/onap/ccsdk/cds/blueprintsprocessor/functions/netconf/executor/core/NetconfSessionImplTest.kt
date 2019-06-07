@@ -290,6 +290,10 @@ class NetconfSessionImplTest {
             //call the method
             netconfSessionSpy.syncRpc("0", "0")
         }
+        // This test leaves the main's thread interrupt state ON.
+        // We need to turn it OFF otherwise other blocking operations on main thread would fail.
+        // This problem was breaking the `asyncRpc runs normally` test on some CIs environments (GitLab and Travis CI).
+        Thread.interrupted()
     }
 
     @Test
