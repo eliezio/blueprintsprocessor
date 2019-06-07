@@ -5,7 +5,7 @@ set -euo pipefail
 
 export TERM=dumb
 
-SWITCHES="--info --stacktrace"
+SWITCHES="--stacktrace"
 
 echo TRAVIS Environment Variables
 echo ----------------------------
