@@ -34,6 +34,7 @@ plugins {
     id("info.solidsoft.pitest").version("1.4.0")
 
     // Quality / Documentation Plugins
+    id("org.sonarqube").version("2.7.1")
     id("com.adarshr.test-logger").version("1.7.0")
     id("com.github.ksoichiro.console.reporter").version("0.6.2")
 
@@ -46,6 +47,8 @@ description = "Blueprints Processor"
 group = "org.onap.ccsdk.cds.blueprintsprocessor"
 val defaultDockerGroup = "onap"
 val dockerGroup: String? by project
+val scmGroup = "excelsior-esy"
+val scmProject = "blueprintsprocessor"
 
 val mainClassName = "org.onap.ccsdk.cds.blueprintsprocessor.BlueprintProcessorApplication"
 
@@ -260,6 +263,22 @@ pitest {
 
 tasks.pitest {
     reportDir = file(pitestReportsDir)
+}
+
+/*
+ * SonarQube
+ */
+sonarqube {
+    properties {
+        properties(mapOf(
+                "sonar.projectKey" to "${scmGroup}_$scmProject",
+                "sonar.organization" to scmGroup,
+                "sonar.links.homepage" to "https://github.com/$scmGroup/$scmProject",
+                "sonar.links.ci" to "https://travis-ci.org/$scmGroup/$scmProject",
+                "sonar.links.scm" to "https://github.com/$scmGroup/$scmProject",
+                "sonar.links.issue" to "https://github.com/$scmGroup/$scmProject/issues"
+        ))
+    }
 }
 
 /*
