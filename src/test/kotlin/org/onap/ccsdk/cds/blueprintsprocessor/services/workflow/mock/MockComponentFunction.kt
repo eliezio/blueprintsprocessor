@@ -22,6 +22,7 @@ import org.onap.ccsdk.cds.blueprintsprocessor.services.execution.AbstractCompone
 import org.onap.ccsdk.cds.controllerblueprints.core.asJsonPrimitive
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
@@ -30,8 +31,14 @@ import org.springframework.stereotype.Component
 @Configuration
 open class MockComponentConfiguration {
 
-    @Bean(name = ["component-resource-assignment", "component-resource-resolution", "component-jython-executor"])
+    @Bean(name = ["component-resource-assignment", "component-jython-executor"])
     open fun createComponentFunction(): AbstractComponentFunction {
+        return MockComponentFunction()
+    }
+
+    @Bean(name = ["component-resource-resolution"])
+    @ConditionalOnMissingBean(name = ["component-resource-resolution"])
+    open fun createComponentResourceResolutionFunction(): AbstractComponentFunction {
         return MockComponentFunction()
     }
 }

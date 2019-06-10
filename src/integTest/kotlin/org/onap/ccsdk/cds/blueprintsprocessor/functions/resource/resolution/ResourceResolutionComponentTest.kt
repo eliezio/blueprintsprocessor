@@ -22,7 +22,6 @@ package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution
 
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.onap.ccsdk.cds.blueprintsprocessor.core.BluePrintProperties
@@ -46,13 +45,6 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 
-@Ignore("""
-    Prototype bean `org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionComponent`
-    is being overriding by
-    `org.onap.ccsdk.cds.blueprintsprocessor.services.workflow.mock.MockComponentConfiguration.createComponentFunction`.
-    Excluding the name "component-resource-resolution" from the the second definition solves this problem BUT
-    breaks other tests :-(
-""")
 @RunWith(SpringRunner::class)
 @WebFluxTest
 @ContextConfiguration(classes = [ResourceResolutionServiceImpl::class,
