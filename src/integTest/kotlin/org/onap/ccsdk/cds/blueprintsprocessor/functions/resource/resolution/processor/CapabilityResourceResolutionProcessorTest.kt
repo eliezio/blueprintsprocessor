@@ -19,7 +19,6 @@
 package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor
 
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceAssignmentRuntimeService
@@ -48,7 +47,6 @@ class CapabilityResourceResolutionProcessorTest {
     @Autowired
     lateinit var capabilityResourceResolutionProcessor: CapabilityResourceResolutionProcessor
 
-    @Ignore
     @Test
     fun `test kotlin capability`() {
         runBlocking {
@@ -85,7 +83,6 @@ class CapabilityResourceResolutionProcessorTest {
 
             val processorName = resourceAssignmentProcessor.applyNB(resourceAssignment)
             assertNotNull(processorName, "couldn't get kotlin script resource assignment processor name")
-            println(processorName)
         }
     }
 
@@ -118,11 +115,8 @@ class CapabilityResourceResolutionProcessorTest {
 
             val processorName = capabilityResourceResolutionProcessor.processNB(resourceAssignment)
             assertNotNull(processorName, "couldn't get Jython script resource assignment processor name")
-            println(processorName)
         }
     }
 }
 
-open class MockCapabilityService {
-
-}
+open class MockCapabilityService
