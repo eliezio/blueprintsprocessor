@@ -49,7 +49,7 @@ public class BlueprintGRPCServer implements ApplicationListener<ContextRefreshed
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         try {
-            log.info("Starting Blueprint Processor GRPC Starting..");
+            log.info("Starting Blueprint Processor gRPC Starting..");
             Server server = ServerBuilder
                 .forPort(grpcPort)
                 .intercept(authInterceptor)
@@ -58,10 +58,10 @@ public class BlueprintGRPCServer implements ApplicationListener<ContextRefreshed
                 .build();
 
             server.start();
-            log.info("Blueprint Processor GRPC server started and ready to serve on port({})...", server.getPort());
+            log.info("Blueprint Processor gRPC server started and ready to serve on port({})...", server.getPort());
             server.awaitTermination();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to start Blueprint Processor gRPC", e);
         }
     }
 }
