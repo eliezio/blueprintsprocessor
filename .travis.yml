@@ -31,8 +31,19 @@ script:
   - bash <(curl -s https://codecov.io/bash)
   - echo 'Submitting to SonarQube for a thorough analysis'
   - ./gradlew -Dsonar.branch.name=$TRAVIS_BRANCH sonarqube -x test -i
+  - echo 'Generates Asciidoc-authored documentation'
+  - ./gradlew asciidoctor
 #  - echo 'Mutation Tests'
 #  - ./gradlew pitest
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github-token:
+    secure: "Jpz2x5DF6MPGhoD1Tj2VHUY5CIDfCYtadkHbFlTnI/k7gfN7wqRCx91A0BqE+gaqIneUGYpyUrLXIdhL9+q+T34GX2LI7ufFQqmH41TPIRHGuCrw1aG8SmsvqNaJ15s5elz2Zzwz90snIR6Te0vBX50oJdF3YZLZUfs4YnViocmUoN0YquD8sh+cGZ+8OFnkb0drYN7Ul6lhT3J/nOzkbXJ1knrlqcZREvsIZqO+lGV6dwMl+QKjm8iinbLOWMfDyuTZYXv8y3lY4TiGsiV47p9iy3yHaX/w3st/+Dmx1in5/Q0oohMaDQw1oN1geaVSJ5TisKKLLEtTPWh0Z2tcEnMnJDNdQSVPb8AoMBu5VXVdEOUXJ1mKmI9dQNDwcgFhaTogbnGfpPZ98VEcS+KOsKgDAZn8Kk6n7SpOGgaLgHo/8wsB288ggsDXWk+ZFo7kr4/SuV35v6PSvGtgbIEUZnYW8LB67me1vIKndzipAU1fkDE+HgNb50fU9SIiC8pPB97UxZcDnZO1LeL91yABu/TASAD2LmdZzdt2h5N9d5jJqVEDTbmZ1kImTDFaaKx8+83CegMAT20lP5LqGWBBrRpgO2ZdKWj3c+o+lLtTCFBdf7sABY3Ot5OZez2A5wdre2QqDgxkxoKiLSdwMZuXUZ23QGbMZ56bTiN8N/cWujg="
+  local_dir: public
+  on:
+    branch: master
 
 notifications:
   slack:

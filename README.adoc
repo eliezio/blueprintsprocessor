@@ -1,0 +1,79 @@
+:doctype: book
+
+ifndef::env-github[]
+++++
+<div style="position:relative;min-width:960px">
+<a href=" https://github.com/excelsior-esy/blueprintsprocessor"><img width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1" style=" position: absolute;right:0;top:0"></a>
+</div>
+++++
+endif::[]
+
+= ONAP CCSDK/CDS BlueprintsProcessor
+Eliézio Oliveira <eliezio.oliveira@est.tech>
+v{project-version}
+
+image:https://travis-ci.org/excelsior-esy/blueprintsprocessor.svg?branch=master[Build, link="https://travis-ci.org/excelsior-esy/blueprintsprocessor"]
+image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=alert_status[SonarQube Quality Gate, link="https://sonarcloud.io/dashboard?id=excelsior-esy_blueprintsprocessor"]
+image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=coverage[Coverage, link="https://sonarcloud.io/project/activity?custom_metrics=coverage&graph=custom&id=excelsior-esy_blueprintsprocessor"]
+image:https://img.shields.io/endpoint.svg?url=https://excelsior-esy.github.io/blueprintsprocessor/pitest/shields.json[Pitest, link="https://excelsior-esy.github.io/blueprintsprocessor/pitest/"]
+
+== Overview
+
+The project is a fork of https://github.com/onap/ccsdk-cds and it's aimed to support:
+
+* Increase code-coverage of tests till it reaches a production-grade level (>= 70%) by:
+** Restoring pre-existing tests that were eventually disabled;
+** Adding more Unit/Integration tests.
+* Validate tests by implementing mutation-tests.
+
+== Improvements
+
+The improvements comprise a series of commits that can be browsed at
+https://github.com/onap/ccsdk-cds/compare/master...excelsior-esy:excelsior?expand=1
+
+=== Evolution of SonarQube Measures
+
+[cols="1,2,2",options="header"]
+|===
+| Category
+>| Original
+>| Excelsior!
+
+.3+.^e| Reliability
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&branch=upstream-latest&metric=bugs[]
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=bugs[]
+
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&branch=upstream-latest&metric=vulnerabilities[]
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=vulnerabilities[]
+
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&branch=upstream-latest&metric=coverage[]
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=coverage[]
+
+.3+.^e| Maintainability
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&branch=upstream-latest&metric=sqale_index[]
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=sqale_index[]
+
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&branch=upstream-latest&metric=code_smells[]
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=code_smells[]
+
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&branch=upstream-latest&&metric=duplicated_lines_density[]
+>| image:https://sonarcloud.io/api/project_badges/measure?project=excelsior-esy_blueprintsprocessor&metric=duplicated_lines_density[]
+|===
+
+=== Evolution of Code-Coverage
+
+On the grid below each block represents a single file in the project.
+The size and color of each block is represented by the number of statements and the coverage, respectively.
+
+[cols="2*^",options="header"]
+|===
+| Original
+| Excelsior!
+
+|image:https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/upstream-latest/graphs/tree.svg[https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/upstream-latest/graphs/tree.svg]
+|image:https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/master/graphs/tree.svg[https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/master/graphs/tree.svg]
+|===
+
+== License
+
+Copyright (C) 2019 Nordix Foundation.
