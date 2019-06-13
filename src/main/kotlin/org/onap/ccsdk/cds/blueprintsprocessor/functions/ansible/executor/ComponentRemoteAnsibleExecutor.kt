@@ -32,6 +32,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
+import kotlin.text.Charsets.UTF_8
 
 /**
  * ComponentRemoteAnsibleExecutor
@@ -46,17 +47,20 @@ import org.springframework.stereotype.Component
  */
 @Component("component-remote-ansible-executor")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertyService: BluePrintRestLibPropertyService)
+open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertyService: BluePrintRestLibPropertyService,
+                                          private val mapper: ObjectMapper)
     : AbstractComponentFunction() {
-
-    private val log = LoggerFactory.getLogger(ComponentRemoteAnsibleExecutor::class.java)!!
 
     // HTTP related constants
     private val HTTP_SUCCESS = 200..202
     private val GET = HttpMethod.GET.name
     private val POST = HttpMethod.POST.name
 
+    var checkDelay: Long = 1_000
+
     companion object {
+        private val log = LoggerFactory.getLogger(ComponentRemoteAnsibleExecutor::class.java)
+
         // input fields names accepted by this executor
         const val INPUT_ENDPOINT_SELECTOR = "endpoint-selector"
         const val INPUT_JOB_TEMPLATE_NAME = "job-template-name"
@@ -70,8 +74,6 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
         const val ATTRIBUTE_EXEC_CMD_STATUS = "ansible-command-status"
         const val ATTRIBUTE_EXEC_CMD_LOG = "ansible-command-logs"
         const val ATTRIBUTE_EXEC_CMD_STATUS_ERROR = "error"
-
-        const val CHECKDELAY: Long = 10000
     }
 
     override suspend fun processNB(executionRequest: ExecutionServiceInput) {
@@ -84,7 +86,7 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
             if (jtId.isNotEmpty()) {
                 runJobTemplateOnAWX(restClientService, jobTemplateName, jtId)
             } else {
-                val message = "Job template ${jobTemplateName} does not exists"
+                val message = "Job template $jobTemplateName does not exists"
                 log.error(message)
                 setNodeOutputErrors(ATTRIBUTE_EXEC_CMD_STATUS_ERROR, message)
             }
@@ -129,11 +131,9 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
     /**
      * Finds the job template ID based on the job template name provided in the request
      */
-    private fun lookupJobTemplateIDByName(awxClient : BlueprintWebClientService, job_template_name: String?): String {
-        val mapper = ObjectMapper()
-
+    private fun lookupJobTemplateIDByName(awxClient : BlueprintWebClientService, jobTemplateName: String?): String {
         // Get Job Template details by name
-        var response = awxClient.exchangeResource(GET, "/api/v2/job_templates/${job_template_name}/", "")
+        val response = awxClient.exchangeResource(GET, "/api/v2/job_templates/$jobTemplateName/", "")
         val jtDetails: JsonNode = mapper.readTree(response.body)
         return jtDetails.at("/id").asText()
     }
@@ -144,26 +144,23 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
      * its execution. Finally, it retrieves the job results via the stdout api.
      * The status and output attributes are populated in the process.
      */
-    private fun runJobTemplateOnAWX(awxClient : BlueprintWebClientService, job_template_name: String?, jtId: String) {
-        val mapper = ObjectMapper()
-
+    private fun runJobTemplateOnAWX(awxClient : BlueprintWebClientService, jobTemplateName: String?, jtId: String) {
         setNodeOutputProperties( "preparing".asJsonPrimitive(), "".asJsonPrimitive())
 
         // Get Job Template requirements
-        var response = awxClient.exchangeResource(GET, "/api/v2/job_templates/${jtId}/launch/","")
+        var response = awxClient.exchangeResource(GET, "/api/v2/job_templates/$jtId/launch/","")
+        // FIXME: handle non-successful SC
         val jtLaunchReqs: JsonNode = mapper.readTree(response.body)
-        var payload = prepareLaunchPayload(awxClient, jtLaunchReqs)
+        val payload = prepareLaunchPayload(awxClient, jtLaunchReqs)
         log.info("Running job with $payload, for requestId $processId.")
 
         // Launch the job for the targeted template
         var jtLaunched : JsonNode = JacksonUtils.jsonNode("{}") as ObjectNode
-        response = awxClient.exchangeResource(POST, "/api/v2/job_templates/${jtId}/launch/", payload)
+        response = awxClient.exchangeResource(POST, "/api/v2/job_templates/$jtId/launch/", payload)
         if (response.status in HTTP_SUCCESS) {
             jtLaunched = mapper.readTree(response.body)
             val fieldsIgnored: JsonNode = jtLaunched.at("/ignored_fields")
-            if (fieldsIgnored.rootFieldsToMap().isNotEmpty()) {
-                log.warn("Ignored fields : $fieldsIgnored, for requestId $processId.")
-            }
+            log.warn("Ignored fields : $fieldsIgnored, for requestId $processId.")
         }
 
         if (response.status in HTTP_SUCCESS) {
@@ -173,26 +170,26 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
             var jobStatus = "unknown"
             var jobEndTime = "null"
             while (jobEndTime == "null") {
-                response = awxClient.exchangeResource(GET, "/api/v2/jobs/${jobId}/", "")
+                response = awxClient.exchangeResource(GET, "/api/v2/jobs/$jobId/", "")
                 val jobLaunched: JsonNode = mapper.readTree(response.body)
                 jobStatus = jobLaunched.at("/status").asText()
                 jobEndTime = jobLaunched.at("/finished").asText()
-                Thread.sleep(CHECKDELAY)
+                Thread.sleep(checkDelay)
             }
 
-            log.info("Execution of job template $job_template_name in job #$jobId finished with status ($jobStatus) for requestId $processId")
+            log.info("Execution of job template $jobTemplateName in job #$jobId finished with status ($jobStatus) for requestId $processId")
 
             // Get job execution results (stdout)
             val plainTextHeaders = mutableMapOf<String, String>()
             plainTextHeaders["Content-Type"] = "text/plain ;utf-8"
-            response = awxClient.exchangeResource(GET, "/api/v2/jobs/${jobId}/stdout/?format=txt","", plainTextHeaders)
+            response = awxClient.exchangeResource(GET, "/api/v2/jobs/$jobId/stdout/?format=txt","", plainTextHeaders)
 
             setNodeOutputProperties( jobStatus.asJsonPrimitive(), response.body.asJsonPrimitive())
         } else {
             // The job template requirements were not fulfilled with the values passed in. The message below will
             // provide more information via the response, like the ignored_fields, or variables_needed_to_start,
             // or resources_needed_to_start, in order to help user pinpoint the problems with the request.
-            val message = "Execution of job template $job_template_name could not be started for requestId $processId." +
+            val message = "Execution of job template $jobTemplateName could not be started for requestId $processId." +
                     " (Response: ${response.body}) "
             log.error(message)
             setNodeOutputErrors( ATTRIBUTE_EXEC_CMD_STATUS_ERROR, message)
@@ -227,10 +224,7 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
         }
         val askInventoryOnLaunch = jtLaunchReqs.at("/ask_inventory_on_launch").asBoolean()
         if (askInventoryOnLaunch && inventoryProp != null) {
-            var inventoryKeyId = inventoryProp.toIntOrNull()
-            if (inventoryKeyId == null) {
-                inventoryKeyId = resolveInventoryIdByName(awxClient, inventoryProp)
-            }
+            val inventoryKeyId = inventoryProp.toIntOrNull() ?: resolveInventoryIdByName(awxClient, inventoryProp)
             payload.put(INPUT_INVENTORY, inventoryKeyId)
         }
         val askVariablesOnLaunch = jtLaunchReqs.at("/ask_variables_on_launch").asBoolean()
@@ -241,15 +235,13 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
         return payload.toString()
     }
 
-    private fun resolveInventoryIdByName(awxClient : BlueprintWebClientService, inventoryProp: String): Int? {
+    private fun resolveInventoryIdByName(awxClient : BlueprintWebClientService, inventoryProp: String): Int {
         var invId : Int? = null
 
         // Get Inventory by name
-        val encoded = URLEncoder.encode(inventoryProp)
+        val encoded = URLEncoder.encode(inventoryProp, UTF_8.name())
         val response = awxClient.exchangeResource(GET,"/api/v2/inventories/?name=$encoded","")
         if (response.status in HTTP_SUCCESS) {
-            val mapper = ObjectMapper()
-
             // Extract the inventory ID from response
             val invDetails = mapper.readTree(response.body)
             val nbInvFound = invDetails.at("/count").asInt()
@@ -281,6 +273,7 @@ open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertySe
     /**
      * Utility function to set the output properties and errors of the executor node, in cas of errors
      */
+    @Suppress("SameParameterValue")
     private fun setNodeOutputErrors(status: String, message: String) {
         setAttribute(ATTRIBUTE_EXEC_CMD_STATUS, status.asJsonPrimitive())
         setAttribute(ATTRIBUTE_EXEC_CMD_LOG, message.asJsonPrimitive())
