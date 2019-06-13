@@ -27,14 +27,15 @@ install: true
 script:
   - echo 'Buid starts'
   - ./gradle/buildViaTravis.sh
-  - echo 'Gattering code-coverage for Codecov graphing'
+  - echo 'Gathering code-coverage for Codecov graphing'
   - bash <(curl -s https://codecov.io/bash)
   - echo 'Submitting to SonarQube for a thorough analysis'
   - ./gradlew -Dsonar.branch.name=$TRAVIS_BRANCH sonarqube -x test -i
   - echo 'Generates Asciidoc-authored documentation'
   - ./gradlew asciidoctor
-  - echo 'Mutation Tests'
-  - ./gradlew pitest
+  # commenting out mutation tests temporarily
+  #- echo 'Mutation Tests'
+  #- ./gradlew pitest
 
 deploy:
   provider: pages
