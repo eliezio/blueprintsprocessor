@@ -70,8 +70,8 @@ The size and color of each block is represented by the number of statements and 
 | Original
 | Excelsior!
 
-|image:https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/upstream-latest/graphs/tree.svg[https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/upstream-latest/graphs/tree.svg]
-|image:https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/master/graphs/tree.svg[https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/master/graphs/tree.svg]
+|image:https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/upstream-latest/graphs/tree.svg[link="https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/upstream-latest/graphs/tree.svg"]
+|image:https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/master/graphs/tree.svg[link="https://codecov.io/gh/excelsior-esy/blueprintsprocessor/branch/master/graphs/tree.svg"]
 |===
 
 == License
