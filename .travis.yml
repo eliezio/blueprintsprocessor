@@ -33,9 +33,8 @@ script:
   - ./gradlew -Dsonar.branch.name=$TRAVIS_BRANCH sonarqube -x test -i
   - echo 'Generates Asciidoc-authored documentation'
   - ./gradlew asciidoctor
-  # commenting out mutation tests temporarily
-  #- echo 'Mutation Tests'
-  #- ./gradlew pitest
+  - echo 'Mutation Tests'
+  - test "$PITEST_ENABLED" = "true" && ./gradlew pitest
 
 deploy:
   provider: pages
