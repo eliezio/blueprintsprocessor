@@ -321,7 +321,7 @@ data class HSB(val hue: Double, val saturation: Double, val brightness: Double)
 
 data class RGB(val red: Int, val green: Int, val blue: Int) {
     override fun toString(): String {
-        return "#ff%02x%02x%02x".format(red, green, blue)
+        return "#%02x%02x%02x".format(red, green, blue)
     }
 }
 
