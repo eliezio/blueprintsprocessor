@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlueprintJythonService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.services.execution.scripts</a> &gt; <span class="el_source">BlueprintJythonService.kt</span></div><h1>BlueprintJythonService.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2019 IBM, Bell Canada.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.onap.ccsdk.cds.blueprintsprocessor.services.execution.scripts
+
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
+import org.apache.commons.io.FilenameUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.services.execution.AbstractComponentFunction
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.checkNotEmpty
+import org.onap.ccsdk.cds.controllerblueprints.core.data.OperationAssignment
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BlueprintFunctionNode
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintContext
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationContext
+import org.springframework.stereotype.Service
+import java.io.File
+
+@Service
+<span class="fc" id="L35">class BlueprintJythonService(val pythonExecutorProperty: PythonExecutorProperty,</span>
+                                  private val applicationContext: ApplicationContext) {
+
+<span class="fc" id="L38">    val log: Logger = LoggerFactory.getLogger(BlueprintJythonService::class.java)</span>
+
+    inline fun &lt;reified T&gt; jythonInstance(blueprintContext: BluePrintContext, pythonClassName: String, content: String,
+                                          dependencyInstanceNames: MutableMap&lt;String, Any&gt;?): T {
+
+<span class="nc" id="L43">        val blueprintBasePath: String = blueprintContext.rootPath</span>
+<span class="nc" id="L44">        val pythonPath: MutableList&lt;String&gt; = arrayListOf()</span>
+<span class="nc" id="L45">        pythonPath.add(blueprintBasePath)</span>
+<span class="nc" id="L46">        pythonPath.addAll(pythonExecutorProperty.modulePaths)</span>
+
+<span class="nc" id="L48">        val blueprintPythonConfigurations = BluePrintPython(pythonExecutorProperty.executionPath, pythonPath, arrayListOf())</span>
+
+<span class="nc" id="L50">        val blueprintPythonHost = BlueprintPythonHost(blueprintPythonConfigurations)</span>
+<span class="nc" id="L51">        val pyObject = blueprintPythonHost.getPythonComponent(content, pythonClassName, dependencyInstanceNames)</span>
+
+<span class="nc" id="L53">        log.info(&quot;Component Object {}&quot;, pyObject)</span>
+
+<span class="nc" id="L55">        return pyObject.__tojava__(T::class.java) as T</span>
+    }
+
+    fun jythonComponentInstance(bluePrintContext: BluePrintContext, scriptClassReference: String):
+            BlueprintFunctionNode&lt;*, *&gt; {
+
+<span class="fc" id="L61">        val pythonFileName = bluePrintContext.rootPath</span>
+<span class="fc" id="L62">                .plus(File.separator)</span>
+<span class="fc" id="L63">                .plus(scriptClassReference)</span>
+
+<span class="fc" id="L65">        val pythonClassName = FilenameUtils.getBaseName(pythonFileName)</span>
+<span class="fc" id="L66">        log.info(&quot;Getting Jython Script Class($pythonClassName)&quot;)</span>
+
+<span class="fc" id="L68">        val content: String = JacksonUtils.getContent(pythonFileName)</span>
+
+<span class="fc" id="L70">        val jythonInstances: MutableMap&lt;String, Any&gt; = hashMapOf()</span>
+<span class="fc" id="L71">        jythonInstances[&quot;log&quot;] = LoggerFactory.getLogger(pythonClassName)</span>
+
+<span class="fc" id="L73">        return jythonInstance&lt;BlueprintFunctionNode&lt;*, *&gt;&gt;(bluePrintContext, pythonClassName,</span>
+                content, jythonInstances)
+    }
+
+    fun jythonComponentInstance(abstractComponentFunction: AbstractComponentFunction): AbstractComponentFunction {
+
+<span class="nc" id="L79">        val bluePrintRuntimeService = abstractComponentFunction.bluePrintRuntimeService</span>
+<span class="nc" id="L80">        val bluePrintContext = bluePrintRuntimeService.bluePrintContext()</span>
+<span class="nc" id="L81">        val nodeTemplateName: String = abstractComponentFunction.nodeTemplateName</span>
+<span class="nc" id="L82">        val operationInputs: MutableMap&lt;String, JsonNode&gt; = abstractComponentFunction.operationInputs</span>
+
+<span class="nc" id="L84">        val operationAssignment: OperationAssignment = bluePrintContext</span>
+<span class="nc" id="L85">                .nodeTemplateInterfaceOperation(abstractComponentFunction.nodeTemplateName,</span>
+<span class="nc" id="L86">                        abstractComponentFunction.interfaceName, abstractComponentFunction.operationName)</span>
+
+<span class="nc" id="L88">        val blueprintBasePath: String = bluePrintContext.rootPath</span>
+
+<span class="nc bnc" id="L90" title="All 4 branches missed.">        val artifactName: String = operationAssignment.implementation?.primary</span>
+<span class="nc" id="L91">                ?: throw BluePrintProcessorException(&quot;missing primary field to get artifact name for node template ($nodeTemplateName)&quot;)</span>
+
+<span class="nc" id="L93">        val artifactDefinition = bluePrintRuntimeService.resolveNodeTemplateArtifactDefinition(nodeTemplateName, artifactName)</span>
+
+<span class="nc" id="L95">        val pythonFileName = artifactDefinition.file</span>
+
+<span class="nc" id="L97">        val pythonClassName = FilenameUtils.getBaseName(pythonFileName)</span>
+<span class="nc" id="L98">        log.info(&quot;Getting Jython Script Class($pythonClassName)&quot;)</span>
+
+<span class="nc" id="L100">        val content: String? = bluePrintRuntimeService.resolveNodeTemplateArtifact(nodeTemplateName, artifactName)</span>
+
+<span class="nc" id="L102">        checkNotEmpty(content){ &quot;artifact ($artifactName) content is empty&quot;}</span>
+
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        val pythonPath: MutableList&lt;String&gt; = operationAssignment.implementation?.dependencies ?: arrayListOf()</span>
+<span class="nc" id="L105">        pythonPath.add(blueprintBasePath)</span>
+<span class="nc" id="L106">        pythonPath.addAll(pythonExecutorProperty.modulePaths)</span>
+
+<span class="nc" id="L108">        val jythonInstances: MutableMap&lt;String, Any&gt; = hashMapOf()</span>
+<span class="nc" id="L109">        jythonInstances[&quot;log&quot;] = LoggerFactory.getLogger(nodeTemplateName)</span>
+
+<span class="nc bnc" id="L111" title="All 4 branches missed.">        val instanceDependenciesNode: ArrayNode = operationInputs[PythonExecutorConstants.INPUT_INSTANCE_DEPENDENCIES] as? ArrayNode</span>
+<span class="nc" id="L112">                ?: throw BluePrintProcessorException(&quot;Failed to get property(${PythonExecutorConstants.INPUT_INSTANCE_DEPENDENCIES})&quot;)</span>
+
+<span class="nc" id="L114">        instanceDependenciesNode.forEach { instanceName -&gt;</span>
+<span class="nc" id="L115">            jythonInstances[instanceName.textValue()] = applicationContext.getBean(instanceName.textValue())</span>
+<span class="nc" id="L116">        }</span>
+
+<span class="nc" id="L118">        val scriptComponentFunction = jythonInstance&lt;AbstractComponentFunction&gt;(bluePrintContext, pythonClassName,</span>
+<span class="nc" id="L119">                content!!, jythonInstances)</span>
+
+<span class="nc" id="L121">        return scriptComponentFunction</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

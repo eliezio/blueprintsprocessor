@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PayloadUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.core.utils</a> &gt; <span class="el_source">PayloadUtils.kt</span></div><h1>PayloadUtils.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.core.utils
+
+import com.fasterxml.jackson.databind.JsonNode
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintConstants
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintRuntimeService
+
+
+<span class="nc" id="L24">class PayloadUtils {</span>
+
+    companion object {
+
+        fun prepareInputsFromWorkflowPayload(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, payload: JsonNode, workflowName: String) {
+<span class="fc" id="L29">            val input = payload.get(&quot;$workflowName-request&quot;)</span>
+<span class="fc" id="L30">            bluePrintRuntimeService.assignWorkflowInputs(workflowName, input)</span>
+<span class="fc" id="L31">        }</span>
+
+        fun prepareDynamicInputsFromWorkflowPayload(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, payload: JsonNode, workflowName: String) {
+<span class="nc" id="L34">            val input = payload.get(&quot;$workflowName-request&quot;)</span>
+<span class="nc" id="L35">            val propertyFields = input.get(&quot;$workflowName-properties&quot;)</span>
+<span class="nc" id="L36">            prepareDynamicInputsFromComponentPayload(bluePrintRuntimeService, propertyFields)</span>
+<span class="nc" id="L37">        }</span>
+
+        fun prepareDynamicInputsFromComponentPayload(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, payload: JsonNode) {
+<span class="nc" id="L40">            payload.fields().forEach { property -&gt;</span>
+<span class="nc" id="L41">                val path = StringBuilder(BluePrintConstants.PATH_INPUTS)</span>
+<span class="nc" id="L42">                        .append(BluePrintConstants.PATH_DIVIDER).append(property.key).toString()</span>
+<span class="nc" id="L43">                bluePrintRuntimeService.put(path, property.value)</span>
+<span class="nc" id="L44">            }</span>
+<span class="nc" id="L45">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

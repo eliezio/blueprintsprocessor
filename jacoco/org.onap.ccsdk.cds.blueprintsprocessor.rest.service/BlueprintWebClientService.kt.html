@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlueprintWebClientService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.rest.service</a> &gt; <span class="el_source">BlueprintWebClientService.kt</span></div><h1>BlueprintWebClientService.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada, Nordix Foundation
+ * Modifications Copyright © 2018-2019 IBM.
+ * Modifications Copyright © 2019 Huawei.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.rest.service
+
+import com.fasterxml.jackson.databind.JsonNode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.apache.commons.io.IOUtils
+import org.apache.http.client.ClientProtocolException
+import org.apache.http.client.methods.HttpDelete
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPatch
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.client.methods.HttpPut
+import org.apache.http.client.methods.HttpUriRequest
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.message.BasicHeader
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.utils.WebClientUtils
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.springframework.http.HttpMethod
+import java.io.IOException
+import java.io.InputStream
+import java.nio.charset.Charset
+
+interface BlueprintWebClientService {
+
+    fun defaultHeaders(): Map&lt;String, String&gt;
+
+    fun host(uri: String): String
+
+    fun httpClient(): CloseableHttpClient {
+<span class="fc" id="L51">        return HttpClients.custom()</span>
+<span class="fc" id="L52">            .addInterceptorFirst(WebClientUtils.logRequest())</span>
+<span class="fc" id="L53">            .addInterceptorLast(WebClientUtils.logResponse())</span>
+<span class="fc" id="L54">            .build()</span>
+    }
+
+    fun exchangeResource(methodType: String, path: String, request: String): WebClientResponse&lt;String&gt; {
+<span class="fc" id="L58">        return this.exchangeResource(methodType, path, request, defaultHeaders())</span>
+    }
+
+    fun exchangeResource(methodType: String, path: String, request: String,
+                         headers: Map&lt;String, String&gt;): WebClientResponse&lt;String&gt; {
+        /**
+         * TODO: Basic headers in the implementations of this client do not get added
+         * in blocking version, whereas in NB version defaultHeaders get added.
+         * the difference is in convertToBasicHeaders vs basicHeaders
+         */
+<span class="fc" id="L68">        val convertedHeaders: Array&lt;BasicHeader&gt; = convertToBasicHeaders(headers)</span>
+<span class="pc bpc" id="L69" title="5 of 8 branches missed.">        return when (HttpMethod.resolve(methodType)) {</span>
+<span class="nc" id="L70">            HttpMethod.DELETE -&gt; delete(path, convertedHeaders, String::class.java)</span>
+<span class="fc" id="L71">            HttpMethod.GET -&gt; get(path, convertedHeaders, String::class.java)</span>
+<span class="nc" id="L72">            HttpMethod.POST -&gt; post(path, request, convertedHeaders, String::class.java)</span>
+<span class="nc" id="L73">            HttpMethod.PUT -&gt; put(path, request, convertedHeaders, String::class.java)</span>
+<span class="fc" id="L74">            HttpMethod.PATCH -&gt; patch(path, request, convertedHeaders, String::class.java)</span>
+<span class="nc" id="L75">            else -&gt; throw BluePrintProcessorException(&quot;Unsupported met&quot; +</span>
+<span class="nc" id="L76">                &quot;hodType($methodType)&quot;)</span>
+        }
+    }
+
+    fun convertToBasicHeaders(headers: Map&lt;String, String&gt;): Array&lt;BasicHeader&gt; {
+<span class="fc" id="L81">        return headers.map { BasicHeader(it.key, it.value) }.toTypedArray()</span>
+    }
+
+    fun &lt;T&gt; delete(path: String, headers: Array&lt;BasicHeader&gt;, responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; {
+<span class="fc" id="L85">        val httpDelete = HttpDelete(host(path))</span>
+<span class="fc" id="L86">        httpDelete.setHeaders(headers)</span>
+<span class="fc" id="L87">        return performCallAndExtractTypedWebClientResponse(httpDelete, responseType)</span>
+    }
+
+    fun &lt;T&gt; get(path: String, headers: Array&lt;BasicHeader&gt;, responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; {
+<span class="fc" id="L91">        val httpGet = HttpGet(host(path))</span>
+<span class="fc" id="L92">        httpGet.setHeaders(headers)</span>
+<span class="fc" id="L93">        return performCallAndExtractTypedWebClientResponse(httpGet, responseType)</span>
+    }
+
+    fun &lt;T&gt; post(path: String, request: Any, headers: Array&lt;BasicHeader&gt;, responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; {
+<span class="fc" id="L97">        val httpPost = HttpPost(host(path))</span>
+<span class="fc" id="L98">        val entity = StringEntity(strRequest(request))</span>
+<span class="fc" id="L99">        httpPost.entity = entity</span>
+<span class="fc" id="L100">        httpPost.setHeaders(headers)</span>
+<span class="fc" id="L101">        return performCallAndExtractTypedWebClientResponse(httpPost, responseType)</span>
+    }
+
+    fun &lt;T&gt; put(path: String, request: Any, headers: Array&lt;BasicHeader&gt;, responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; {
+<span class="fc" id="L105">        val httpPut = HttpPut(host(path))</span>
+<span class="fc" id="L106">        val entity = StringEntity(strRequest(request))</span>
+<span class="fc" id="L107">        httpPut.entity = entity</span>
+<span class="fc" id="L108">        httpPut.setHeaders(headers)</span>
+<span class="fc" id="L109">        return performCallAndExtractTypedWebClientResponse(httpPut, responseType)</span>
+    }
+
+    fun &lt;T&gt; patch(path: String, request: Any, headers: Array&lt;BasicHeader&gt;, responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; {
+<span class="fc" id="L113">        val httpPatch = HttpPatch(host(path))</span>
+<span class="fc" id="L114">        val entity = StringEntity(strRequest(request))</span>
+<span class="fc" id="L115">        httpPatch.entity = entity</span>
+<span class="fc" id="L116">        httpPatch.setHeaders(headers)</span>
+<span class="fc" id="L117">        return performCallAndExtractTypedWebClientResponse(httpPatch, responseType)</span>
+    }
+
+    /**
+     * Perform the HTTP call and return HTTP status code and body.
+     * @param httpUriRequest {@link HttpUriRequest} object
+     * @return {@link WebClientResponse} object
+     * http client may throw IOException and ClientProtocolException on error
+     */
+
+    @Throws(IOException::class, ClientProtocolException::class)
+    private fun &lt;T&gt; performCallAndExtractTypedWebClientResponse(
+        httpUriRequest: HttpUriRequest, responseType: Class&lt;T&gt;):
+        WebClientResponse&lt;T&gt; {
+<span class="fc" id="L131">        val httpResponse = httpClient().execute(httpUriRequest)</span>
+<span class="fc" id="L132">        val statusCode = httpResponse.statusLine.statusCode</span>
+<span class="pc" id="L133">        httpResponse.entity.content.use {</span>
+<span class="fc" id="L134">            val body = getResponse(it, responseType)</span>
+<span class="fc" id="L135">            return WebClientResponse(statusCode, body)</span>
+        }
+    }
+
+    suspend fun getNB(path: String): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L140">        return getNB(path, null, String::class.java)</span>
+    }
+
+    suspend fun getNB(path: String, additionalHeaders: Array&lt;BasicHeader&gt;?): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L144">        return getNB(path, additionalHeaders, String::class.java)</span>
+    }
+
+    suspend fun &lt;T&gt; getNB(path: String, additionalHeaders: Array&lt;BasicHeader&gt;?, responseType: Class&lt;T&gt;):
+        WebClientResponse&lt;T&gt; =
+<span class="fc" id="L149">        withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L150">            get(path, additionalHeaders!!, responseType)</span>
+<span class="fc" id="L151">        }</span>
+
+    suspend fun postNB(path: String, request: Any): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L154">        return postNB(path, request, null, String::class.java)</span>
+    }
+
+    suspend fun postNB(path: String, request: Any, additionalHeaders: Array&lt;BasicHeader&gt;?): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L158">        return postNB(path, request, additionalHeaders, String::class.java)</span>
+    }
+
+    suspend fun &lt;T&gt; postNB(path: String, request: Any, additionalHeaders: Array&lt;BasicHeader&gt;?,
+                           responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; =
+<span class="fc" id="L163">        withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L164">            post(path, request, additionalHeaders!!, responseType)</span>
+<span class="fc" id="L165">        }</span>
+
+    suspend fun putNB(path: String, request: Any): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L168">        return putNB(path, request, null, String::class.java)</span>
+    }
+
+    suspend fun putNB(path: String, request: Any,
+                      additionalHeaders: Array&lt;BasicHeader&gt;?): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L173">        return putNB(path, request, additionalHeaders, String::class.java)</span>
+    }
+
+    suspend fun &lt;T&gt; putNB(path: String, request: Any,
+                          additionalHeaders: Array&lt;BasicHeader&gt;?,
+                          responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; =
+<span class="fc" id="L179">        withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L180">            put(path, request, additionalHeaders!!, responseType)</span>
+<span class="fc" id="L181">        }</span>
+
+    suspend fun &lt;T&gt; deleteNB(path: String): WebClientResponse&lt;String&gt; {
+<span class="nc" id="L184">        return deleteNB(path, null, String::class.java)</span>
+    }
+
+    suspend fun &lt;T&gt; deleteNB(path: String, additionalHeaders: Array&lt;BasicHeader&gt;?):
+        WebClientResponse&lt;String&gt; {
+<span class="nc" id="L189">        return deleteNB(path, additionalHeaders, String::class.java)</span>
+    }
+
+    suspend fun &lt;T&gt; deleteNB(path: String, additionalHeaders: Array&lt;BasicHeader&gt;?, responseType: Class&lt;T&gt;):
+        WebClientResponse&lt;T&gt; =
+<span class="fc" id="L194">        withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L195">            delete(path, additionalHeaders!!, responseType)</span>
+<span class="fc" id="L196">        }</span>
+
+    suspend fun &lt;T&gt; patchNB(path: String, request: Any, additionalHeaders: Array&lt;BasicHeader&gt;?, responseType: Class&lt;T&gt;):
+        WebClientResponse&lt;T&gt; =
+<span class="fc" id="L200">        withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L201">            patch(path, request, additionalHeaders!!, responseType)</span>
+<span class="fc" id="L202">        }</span>
+
+    suspend fun exchangeNB(methodType: String, path: String, request: Any): WebClientResponse&lt;String&gt; {
+<span class="fc" id="L205">        return exchangeNB(methodType, path, request, hashMapOf(),</span>
+<span class="fc" id="L206">            String::class.java)</span>
+    }
+
+    suspend fun exchangeNB(methodType: String, path: String, request: Any, additionalHeaders: Map&lt;String, String&gt;?):
+        WebClientResponse&lt;String&gt; {
+<span class="nc" id="L211">        return exchangeNB(methodType, path, request, additionalHeaders, String::class.java)</span>
+    }
+
+    suspend fun &lt;T&gt; exchangeNB(methodType: String, path: String, request: Any,
+                               additionalHeaders: Map&lt;String, String&gt;?,
+                               responseType: Class&lt;T&gt;): WebClientResponse&lt;T&gt; {
+
+        //TODO: possible inconsistency
+        //NOTE: this basic headers function is different from non-blocking
+<span class="fc" id="L220">        val convertedHeaders: Array&lt;BasicHeader&gt; = basicHeaders(additionalHeaders!!)</span>
+<span class="pc bpc" id="L221" title="2 of 8 branches missed.">        return when (HttpMethod.resolve(methodType)) {</span>
+<span class="fc" id="L222">            HttpMethod.GET -&gt; getNB(path, convertedHeaders, responseType)</span>
+<span class="fc" id="L223">            HttpMethod.POST -&gt; postNB(path, request, convertedHeaders, responseType)</span>
+<span class="fc" id="L224">            HttpMethod.DELETE -&gt; deleteNB(path, convertedHeaders, responseType)</span>
+<span class="fc" id="L225">            HttpMethod.PUT -&gt; putNB(path, request, convertedHeaders, responseType)</span>
+<span class="fc" id="L226">            HttpMethod.PATCH -&gt; patchNB(path, request, convertedHeaders, responseType)</span>
+<span class="pc" id="L227">            else -&gt; throw BluePrintProcessorException(&quot;Unsupported method&quot; +</span>
+<span class="nc" id="L228">                &quot;Type($methodType)&quot;)</span>
+        }
+    }
+
+    private fun strRequest(request: Any): String {
+<span class="fc" id="L233">        return when (request) {</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">            is String -&gt; request.toString()</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            is JsonNode -&gt; request.toString()</span>
+<span class="nc" id="L236">            else -&gt; JacksonUtils.getJson(request)</span>
+        }
+    }
+
+    private fun &lt;T&gt; getResponse(it: InputStream, responseType: Class&lt;T&gt;): T {
+<span class="fc bfc" id="L241" title="All 2 branches covered.">        return if (responseType == String::class.java) {</span>
+<span class="fc" id="L242">            IOUtils.toString(it, Charset.defaultCharset()) as T</span>
+        } else {
+<span class="fc" id="L244">            JacksonUtils.readValue(it, responseType)!!</span>
+        }
+    }
+
+    private fun basicHeaders(headers: Map&lt;String, String&gt;?):
+        Array&lt;BasicHeader&gt; {
+<span class="fc" id="L250">        val basicHeaders = mutableListOf&lt;BasicHeader&gt;()</span>
+<span class="fc" id="L251">        defaultHeaders().forEach { (name, value) -&gt;</span>
+<span class="fc" id="L252">            basicHeaders.add(BasicHeader(name, value))</span>
+<span class="fc" id="L253">        }</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">        headers?.forEach { name, value -&gt;</span>
+<span class="fc" id="L255">            basicHeaders.add(BasicHeader(name, value))</span>
+<span class="fc" id="L256">        }</span>
+<span class="fc" id="L257">        return basicHeaders.toTypedArray()</span>
+    }
+
+    // Non Blocking Rest Implementation
+    suspend fun httpClientNB(): CloseableHttpClient {
+<span class="nc" id="L262">        return HttpClients.custom()</span>
+<span class="nc" id="L263">            .addInterceptorFirst(WebClientUtils.logRequest())</span>
+<span class="nc" id="L264">            .addInterceptorLast(WebClientUtils.logResponse())</span>
+<span class="nc" id="L265">            .build()</span>
+    }
+
+    //TODO maybe there could be cases where we care about return headers?
+<span class="fc" id="L269">    data class WebClientResponse&lt;T&gt;(val status: Int, val body: T)</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

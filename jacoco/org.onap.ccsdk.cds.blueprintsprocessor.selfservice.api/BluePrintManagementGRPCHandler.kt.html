@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BluePrintManagementGRPCHandler.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api</a> &gt; <span class="el_source">BluePrintManagementGRPCHandler.kt</span></div><h1>BluePrintManagementGRPCHandler.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ * Modifications Copyright © 2019 Bell Canada.
+ * Modifications Copyright © 2019 IBM.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api
+
+import io.grpc.StatusException
+import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.runBlocking
+import org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.utils.currentTimestamp
+import org.onap.ccsdk.cds.controllerblueprints.common.api.CommonHeader
+import org.onap.ccsdk.cds.controllerblueprints.common.api.Status
+import org.onap.ccsdk.cds.controllerblueprints.core.config.BluePrintPathConfiguration
+import org.onap.ccsdk.cds.controllerblueprints.core.deleteDir
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BluePrintCatalogService
+import org.onap.ccsdk.cds.controllerblueprints.core.normalizedFile
+import org.onap.ccsdk.cds.controllerblueprints.core.reCreateDirs
+import org.onap.ccsdk.cds.controllerblueprints.management.api.BluePrintManagementOutput
+import org.onap.ccsdk.cds.controllerblueprints.management.api.BluePrintManagementServiceGrpc
+import org.onap.ccsdk.cds.controllerblueprints.management.api.BluePrintRemoveInput
+import org.onap.ccsdk.cds.controllerblueprints.management.api.BluePrintUploadInput
+import org.slf4j.LoggerFactory
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.stereotype.Service
+import java.io.File
+import java.util.*
+
+@Service
+<span class="fc" id="L43">open class BluePrintManagementGRPCHandler(private val bluePrintPathConfiguration: BluePrintPathConfiguration,</span>
+                                          private val bluePrintCatalogService: BluePrintCatalogService)
+<span class="fc" id="L45">    : BluePrintManagementServiceGrpc.BluePrintManagementServiceImplBase() {</span>
+
+<span class="fc" id="L47">    private val log = LoggerFactory.getLogger(BluePrintManagementGRPCHandler::class.java)</span>
+
+    @PreAuthorize(&quot;hasRole('USER')&quot;)
+    override fun uploadBlueprint(request: BluePrintUploadInput, responseObserver:
+    StreamObserver&lt;BluePrintManagementOutput&gt;) {
+<span class="fc" id="L52">        runBlocking {</span>
+
+<span class="fc" id="L54">            log.info(&quot;request(${request.commonHeader.requestId})&quot;)</span>
+<span class="fc" id="L55">            val uploadId = UUID.randomUUID().toString()</span>
+<span class="fc" id="L56">            try {</span>
+<span class="fc" id="L57">                val cbaFile = normalizedFile(bluePrintPathConfiguration.blueprintArchivePath, uploadId, &quot;cba-zip&quot;)</span>
+
+<span class="fc" id="L59">                saveToDisk(request, cbaFile)</span>
+
+<span class="fc" id="L61">                val blueprintId = bluePrintCatalogService.saveToDatabase(uploadId, cbaFile)</span>
+<span class="fc" id="L62">                responseObserver.onNext(successStatus(&quot;Successfully uploaded CBA($blueprintId)...&quot;, request.commonHeader))</span>
+<span class="fc" id="L63">                responseObserver.onCompleted()</span>
+<span class="nc" id="L64">            } catch (e: Exception) {</span>
+<span class="nc" id="L65">                responseObserver.onError(failStatus(&quot;request(${request.commonHeader.requestId}): Failed to upload CBA&quot;, e))</span>
+            } finally {
+<span class="fc" id="L67">                deleteDir(bluePrintPathConfiguration.blueprintArchivePath, uploadId)</span>
+<span class="fc" id="L68">                deleteDir(bluePrintPathConfiguration.blueprintWorkingPath, uploadId)</span>
+            }
+<span class="fc" id="L70">        }</span>
+<span class="fc" id="L71">    }</span>
+
+    @PreAuthorize(&quot;hasRole('USER')&quot;)
+    override fun removeBlueprint(request: BluePrintRemoveInput, responseObserver:
+    StreamObserver&lt;BluePrintManagementOutput&gt;) {
+
+<span class="fc" id="L77">        runBlocking {</span>
+<span class="fc" id="L78">            val blueprintName = request.blueprintName</span>
+<span class="fc" id="L79">            val blueprintVersion = request.blueprintVersion</span>
+<span class="fc" id="L80">            val blueprint = &quot;blueprint $blueprintName:$blueprintVersion&quot;</span>
+
+<span class="fc" id="L82">            log.info(&quot;request(${request.commonHeader.requestId}): Received delete $blueprint&quot;)</span>
+
+
+<span class="fc" id="L85">            try {</span>
+<span class="fc" id="L86">                bluePrintCatalogService.deleteFromDatabase(blueprintName, blueprintVersion)</span>
+<span class="fc" id="L87">                responseObserver.onNext(successStatus(&quot;Successfully deleted $blueprint&quot;, request.commonHeader))</span>
+<span class="fc" id="L88">                responseObserver.onCompleted()</span>
+<span class="nc" id="L89">            } catch (e: Exception) {</span>
+<span class="nc" id="L90">                responseObserver.onError(failStatus(&quot;request(${request.commonHeader.requestId}): Failed to delete $blueprint&quot;, e))</span>
+            }
+<span class="fc" id="L92">        }</span>
+<span class="fc" id="L93">    }</span>
+
+    private fun saveToDisk(request: BluePrintUploadInput, cbaFile: File) {
+<span class="fc" id="L96">        log.info(&quot;request(${request.commonHeader.requestId}): Writing CBA File under :${cbaFile.absolutePath}&quot;)</span>
+
+        // Recreate Folder
+<span class="fc" id="L99">        cbaFile.parentFile.reCreateDirs()</span>
+
+        // Write the File
+<span class="fc" id="L102">        cbaFile.writeBytes(request.fileChunk.chunk.toByteArray()).apply {</span>
+<span class="fc" id="L103">            log.info(&quot;request(${request.commonHeader.requestId}): CBA file(${cbaFile.absolutePath} written successfully&quot;)</span>
+<span class="fc" id="L104">        }</span>
+
+<span class="fc" id="L106">    }</span>
+
+    private fun successStatus(message: String, header: CommonHeader): BluePrintManagementOutput =
+<span class="fc" id="L109">            BluePrintManagementOutput.newBuilder()</span>
+<span class="fc" id="L110">                    .setCommonHeader(header)</span>
+<span class="fc" id="L111">                    .setStatus(Status.newBuilder()</span>
+<span class="fc" id="L112">                            .setTimestamp(currentTimestamp())</span>
+<span class="fc" id="L113">                            .setMessage(message)</span>
+<span class="fc" id="L114">                            .setCode(200)</span>
+<span class="fc" id="L115">                            .build())</span>
+<span class="fc" id="L116">                    .build()</span>
+
+    private fun failStatus(message: String, e: Exception): StatusException {
+<span class="nc" id="L119">        log.error(message, e)</span>
+<span class="nc" id="L120">        return io.grpc.Status.INTERNAL</span>
+<span class="nc" id="L121">                .withDescription(message)</span>
+<span class="nc" id="L122">                .withCause(e)</span>
+<span class="nc" id="L123">                .asException()</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlueprintGRPCServer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor</a> &gt; <span class="el_source">BlueprintGRPCServer.java</span></div><h1>BlueprintGRPCServer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor;
+
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import org.onap.ccsdk.cds.blueprintsprocessor.security.BasicAuthServerInterceptor;
+import org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.BluePrintManagementGRPCHandler;
+import org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.BluePrintProcessingGRPCHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.stereotype.Component;
+
+@ConditionalOnProperty(name = &quot;blueprintsprocessor.grpcEnable&quot;, havingValue = &quot;true&quot;)
+@Component
+<span class="nc" id="L35">public class BlueprintGRPCServer implements ApplicationListener&lt;ContextRefreshedEvent&gt; {</span>
+
+<span class="nc" id="L37">    private static Logger log = LoggerFactory.getLogger(BlueprintGRPCServer.class);</span>
+
+    @Autowired
+    private BluePrintProcessingGRPCHandler bluePrintProcessingGRPCHandler;
+    @Autowired
+    private BluePrintManagementGRPCHandler bluePrintManagementGRPCHandler;
+    @Autowired
+    private BasicAuthServerInterceptor authInterceptor;
+
+    @Value(&quot;${blueprintsprocessor.grpcPort}&quot;)
+    private Integer grpcPort;
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        try {
+<span class="nc" id="L52">            log.info(&quot;Starting Blueprint Processor gRPC Starting..&quot;);</span>
+<span class="nc" id="L53">            Server server = ServerBuilder</span>
+<span class="nc" id="L54">                .forPort(grpcPort)</span>
+<span class="nc" id="L55">                .intercept(authInterceptor)</span>
+<span class="nc" id="L56">                .addService(bluePrintProcessingGRPCHandler)</span>
+<span class="nc" id="L57">                .addService(bluePrintManagementGRPCHandler)</span>
+<span class="nc" id="L58">                .build();</span>
+
+<span class="nc" id="L60">            server.start();</span>
+<span class="nc" id="L61">            log.info(&quot;Blueprint Processor gRPC server started and ready to serve on port({})...&quot;, server.getPort());</span>
+<span class="nc" id="L62">            server.awaitTermination();</span>
+<span class="nc" id="L63">        } catch (Exception e) {</span>
+<span class="nc" id="L64">            log.error(&quot;Failed to start Blueprint Processor gRPC&quot;, e);</span>
+<span class="nc" id="L65">        }</span>
+<span class="nc" id="L66">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

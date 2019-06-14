@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetconfRpcServiceImpl.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.core</a> &gt; <span class="el_source">NetconfRpcServiceImpl.kt</span></div><h1>NetconfRpcServiceImpl.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.core
+
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.DeviceInfo
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.DeviceResponse
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfException
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfRpcService
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfSession
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.NetconfMessageUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.RpcStatus
+import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+
+<span class="fc" id="L30">class NetconfRpcServiceImpl(private var deviceInfo: DeviceInfo) : NetconfRpcService {</span>
+
+<span class="fc" id="L32">    private val log = LoggerFactory.getLogger(NetconfRpcService::class.java)</span>
+
+<span class="fc" id="L34">    private var responseTimeout: Int = deviceInfo.replyTimeout</span>
+
+    private lateinit var netconfSession: NetconfSession
+
+<span class="fc" id="L38">    private val messageIdInteger = AtomicInteger(1)</span>
+
+    fun setNetconfSession(netconfSession: NetconfSession) {
+<span class="fc" id="L41">        this.netconfSession = netconfSession</span>
+<span class="fc" id="L42">    }</span>
+
+    override fun invokeRpc(rpc: String): DeviceResponse {
+<span class="fc" id="L45">        var output = DeviceResponse()</span>
+<span class="fc" id="L46">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L47">        log.info(&quot;$deviceInfo: invokeRpc: messageId($messageId)&quot;)</span>
+<span class="fc" id="L48">        try {</span>
+<span class="fc" id="L49">            output = asyncRpc(rpc, messageId)</span>
+<span class="fc" id="L50">        } catch (e: Exception) {</span>
+<span class="fc" id="L51">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L52">            output.errorMessage = &quot;$deviceInfo: failed in 'invokeRpc' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L54">        return output</span>
+    }
+
+    override fun getConfig(filter: String, configTarget: String): DeviceResponse {
+<span class="fc" id="L58">        var output = DeviceResponse()</span>
+<span class="fc" id="L59">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L60">        log.info(&quot;$deviceInfo: getConfig: messageId($messageId)&quot;)</span>
+<span class="fc" id="L61">        try {</span>
+<span class="fc" id="L62">            val message = NetconfMessageUtils.getConfig(messageId, configTarget, filter)</span>
+<span class="fc" id="L63">            output = asyncRpc(message, messageId)</span>
+<span class="fc" id="L64">        } catch (e: Exception) {</span>
+<span class="fc" id="L65">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L66">            output.errorMessage = &quot;$deviceInfo: failed in 'get-config' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L68">        return output</span>
+    }
+
+    override fun deleteConfig(configTarget: String): DeviceResponse {
+<span class="fc" id="L72">        var output = DeviceResponse()</span>
+<span class="fc" id="L73">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L74">        log.info(&quot;$deviceInfo: deleteConfig: messageId($messageId)&quot;)</span>
+<span class="fc" id="L75">        try {</span>
+<span class="fc" id="L76">            val deleteConfigMessage = NetconfMessageUtils.deleteConfig(messageId, configTarget)</span>
+<span class="fc" id="L77">            output.requestMessage = deleteConfigMessage</span>
+<span class="fc" id="L78">            output = asyncRpc(deleteConfigMessage, messageId)</span>
+<span class="fc" id="L79">        } catch (e: Exception) {</span>
+<span class="fc" id="L80">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L81">            output.errorMessage = &quot;$deviceInfo: failed in 'delete-config' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L83">        return output</span>
+    }
+
+    override fun lock(configTarget: String): DeviceResponse {
+<span class="fc" id="L87">        var output = DeviceResponse()</span>
+<span class="fc" id="L88">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L89">        log.info(&quot;$deviceInfo: lock: messageId($messageId)&quot;)</span>
+<span class="fc" id="L90">        try {</span>
+<span class="fc" id="L91">            val lockMessage = NetconfMessageUtils.lock(messageId, configTarget)</span>
+<span class="fc" id="L92">            output.requestMessage = lockMessage</span>
+<span class="fc" id="L93">            output = asyncRpc(lockMessage, messageId)</span>
+<span class="fc" id="L94">        } catch (e: Exception) {</span>
+<span class="fc" id="L95">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L96">            output.errorMessage = &quot;$deviceInfo: failed in 'lock' command ${e.message}&quot;</span>
+        }
+
+<span class="fc" id="L99">        return output</span>
+    }
+
+    override fun unLock(configTarget: String): DeviceResponse {
+<span class="fc" id="L103">        var output = DeviceResponse()</span>
+<span class="fc" id="L104">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L105">        log.info(&quot;$deviceInfo: unLock: messageId($messageId)&quot;)</span>
+<span class="fc" id="L106">        try {</span>
+<span class="fc" id="L107">            val unlockMessage = NetconfMessageUtils.unlock(messageId, configTarget)</span>
+<span class="fc" id="L108">            output.requestMessage = unlockMessage</span>
+<span class="fc" id="L109">            output = asyncRpc(unlockMessage, messageId)</span>
+<span class="fc" id="L110">        } catch (e: Exception) {</span>
+<span class="fc" id="L111">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L112">            output.errorMessage = &quot;$deviceInfo: failed in 'unLock' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L114">        return output</span>
+    }
+
+    override fun commit(confirmed: Boolean, confirmTimeout: Int, persist: String, persistId: String): DeviceResponse {
+<span class="fc" id="L118">        var output = DeviceResponse()</span>
+<span class="fc" id="L119">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L120">        log.info(&quot;$deviceInfo: commit: messageId($messageId)&quot;)</span>
+<span class="fc" id="L121">        try {</span>
+<span class="fc" id="L122">            val messageContent = NetconfMessageUtils.commit(messageId, confirmed, confirmTimeout, persist, persistId)</span>
+<span class="fc" id="L123">            output = asyncRpc(messageContent, messageId)</span>
+<span class="fc" id="L124">        } catch (e: Exception) {</span>
+<span class="fc" id="L125">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L126">            output.errorMessage = &quot;$deviceInfo: failed in 'commit' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L128">        return output</span>
+    }
+
+    override fun cancelCommit(persistId: String): DeviceResponse {
+<span class="fc" id="L132">        var output = DeviceResponse()</span>
+<span class="fc" id="L133">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L134">        log.info(&quot;$deviceInfo: cancelCommit: messageId($messageId)&quot;)</span>
+<span class="fc" id="L135">        try {</span>
+<span class="fc" id="L136">            val messageContent = NetconfMessageUtils.cancelCommit(messageId, persistId)</span>
+<span class="fc" id="L137">            output = asyncRpc(messageContent, messageId)</span>
+<span class="fc" id="L138">        } catch (e: Exception) {</span>
+<span class="fc" id="L139">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L140">            output.errorMessage = &quot;$deviceInfo: failed in 'cancelCommit' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L142">        return output</span>
+    }
+
+    override fun discardConfig(): DeviceResponse {
+<span class="fc" id="L146">        var output = DeviceResponse()</span>
+<span class="fc" id="L147">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L148">        log.info(&quot;$deviceInfo: discard: messageId($messageId)&quot;)</span>
+<span class="fc" id="L149">        try {</span>
+<span class="fc" id="L150">            val discardChangesMessage = NetconfMessageUtils.discardChanges(messageId)</span>
+<span class="fc" id="L151">            output.requestMessage = discardChangesMessage</span>
+<span class="fc" id="L152">            output = asyncRpc(discardChangesMessage, messageId)</span>
+<span class="fc" id="L153">        } catch (e: Exception) {</span>
+<span class="fc" id="L154">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L155">            output.errorMessage = &quot;$deviceInfo: failed in 'discard-config' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L157">        return output</span>
+    }
+
+    override fun editConfig(messageContent: String, configTarget: String,
+                            editDefaultOperation: String): DeviceResponse {
+<span class="fc" id="L162">        var response = DeviceResponse()</span>
+<span class="fc" id="L163">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L164">        log.info(&quot;$deviceInfo: editConfig: messageId($messageId)&quot;)</span>
+<span class="fc" id="L165">        try {</span>
+<span class="fc" id="L166">            val editMessage =</span>
+<span class="fc" id="L167">                NetconfMessageUtils.editConfig(messageId, configTarget, editDefaultOperation, messageContent)</span>
+<span class="fc" id="L168">            response.requestMessage = editMessage</span>
+<span class="fc" id="L169">            response = asyncRpc(editMessage, messageId)</span>
+<span class="fc" id="L170">        } catch (e: Exception) {</span>
+<span class="fc" id="L171">            response.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L172">            response.errorMessage = &quot;$deviceInfo: failed in 'editConfig' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L174">        return response</span>
+    }
+
+    override fun validate(configTarget: String): DeviceResponse {
+<span class="fc" id="L178">        var output = DeviceResponse()</span>
+<span class="fc" id="L179">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L180">        try {</span>
+<span class="fc" id="L181">            val validateMessage = NetconfMessageUtils.validate(messageId, configTarget)</span>
+<span class="fc" id="L182">            output.requestMessage = validateMessage</span>
+<span class="fc" id="L183">            output = asyncRpc(validateMessage, messageId)</span>
+<span class="fc" id="L184">        } catch (e: Exception) {</span>
+<span class="fc" id="L185">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L186">            output.errorMessage = &quot;$deviceInfo: failed in 'validate' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L188">        return output</span>
+    }
+
+    override fun closeSession(force: Boolean): DeviceResponse {
+<span class="fc" id="L192">        var output = DeviceResponse()</span>
+<span class="fc" id="L193">        val messageId = messageIdInteger.getAndIncrement().toString()</span>
+<span class="fc" id="L194">        log.info(&quot;$deviceInfo: closeSession: messageId($messageId)&quot;)</span>
+<span class="fc" id="L195">        try {</span>
+<span class="fc" id="L196">            val messageContent = NetconfMessageUtils.closeSession(messageId, force)</span>
+<span class="fc" id="L197">            output = asyncRpc(messageContent, messageId)</span>
+<span class="fc" id="L198">        } catch (e: Exception) {</span>
+<span class="fc" id="L199">            output.status = RpcStatus.FAILURE</span>
+<span class="fc" id="L200">            output.errorMessage = &quot;$deviceInfo: failed in 'closeSession' command ${e.message}&quot;</span>
+        }
+<span class="fc" id="L202">        return output</span>
+    }
+
+    @Throws(NetconfException::class)
+    override fun asyncRpc(request: String, messageId: String): DeviceResponse {
+<span class="fc" id="L207">        val response = DeviceResponse()</span>
+<span class="fc" id="L208">        log.info(&quot;$deviceInfo: send asyncRpc with messageId($messageId)&quot;)</span>
+<span class="fc" id="L209">        response.requestMessage = request</span>
+
+<span class="fc" id="L211">        val rpcResponse = netconfSession.asyncRpc(request, messageId).get(responseTimeout.toLong(), TimeUnit.SECONDS)</span>
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">        if (!NetconfMessageUtils.checkReply(rpcResponse)) {</span>
+<span class="fc" id="L213">            throw NetconfException(rpcResponse)</span>
+        }
+<span class="nc" id="L215">        response.responseMessage = rpcResponse</span>
+<span class="nc" id="L216">        response.status = RpcStatus.SUCCESS</span>
+<span class="nc" id="L217">        response.errorMessage = null</span>
+<span class="nc" id="L218">        return response</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BluePrintGrpcLibPropertyService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.grpc.service</a> &gt; <span class="el_source">BluePrintGrpcLibPropertyService.kt</span></div><h1>BluePrintGrpcLibPropertyService.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2019 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.grpc.service
+
+import com.fasterxml.jackson.databind.JsonNode
+import org.onap.ccsdk.cds.blueprintsprocessor.core.BluePrintProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.grpc.BasicAuthGrpcClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.grpc.GRPCLibConstants
+import org.onap.ccsdk.cds.blueprintsprocessor.grpc.GrpcClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.grpc.TokenAuthGrpcClientProperties
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.springframework.stereotype.Service
+
+@Service(GRPCLibConstants.SERVICE_BLUEPRINT_GRPC_LIB_PROPERTY)
+<span class="fc" id="L30">open class BluePrintGrpcLibPropertyService(private var bluePrintProperties: BluePrintProperties) {</span>
+
+    fun blueprintGrpcClientService(jsonNode: JsonNode): BluePrintGrpcClientService {
+<span class="fc" id="L33">        val restClientProperties = grpcClientProperties(jsonNode)</span>
+<span class="fc" id="L34">        return blueprintGrpcClientService(restClientProperties)</span>
+    }
+
+    fun blueprintGrpcClientService(selector: String): BluePrintGrpcClientService {
+<span class="fc" id="L38">        val prefix = &quot;blueprintsprocessor.grpcclient.$selector&quot;</span>
+<span class="fc" id="L39">        val restClientProperties = grpcClientProperties(prefix)</span>
+<span class="fc" id="L40">        return blueprintGrpcClientService(restClientProperties)</span>
+    }
+
+
+    fun grpcClientProperties(jsonNode: JsonNode): GrpcClientProperties {
+<span class="fc" id="L45">        val type = jsonNode.get(&quot;type&quot;).textValue()</span>
+<span class="pc bpc" id="L46" title="2 of 5 branches missed.">        return when (type) {</span>
+            GRPCLibConstants.TYPE_TOKEN_AUTH -&gt; {
+<span class="fc" id="L48">                JacksonUtils.readValue(jsonNode, TokenAuthGrpcClientProperties::class.java)!!</span>
+            }
+            GRPCLibConstants.TYPE_BASIC_AUTH -&gt; {
+<span class="fc" id="L51">                JacksonUtils.readValue(jsonNode, BasicAuthGrpcClientProperties::class.java)!!</span>
+            }
+            else -&gt; {
+<span class="nc" id="L54">                throw BluePrintProcessorException(&quot;Grpc type($type) not supported&quot;)</span>
+            }
+        }
+    }
+
+    fun grpcClientProperties(prefix: String): GrpcClientProperties {
+<span class="fc" id="L60">        val type = bluePrintProperties.propertyBeanType(</span>
+<span class="fc" id="L61">                &quot;$prefix.type&quot;, String::class.java)</span>
+<span class="pc bpc" id="L62" title="1 of 3 branches missed.">        return when (type) {</span>
+            GRPCLibConstants.TYPE_TOKEN_AUTH -&gt; {
+<span class="fc" id="L64">                tokenAuthGrpcClientProperties(prefix)</span>
+            }
+            GRPCLibConstants.TYPE_BASIC_AUTH -&gt; {
+<span class="fc" id="L67">                basicAuthGrpcClientProperties(prefix)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L70">                throw BluePrintProcessorException(&quot;Grpc type($type) not supported&quot;)</span>
+
+            }
+        }
+    }
+
+    private fun blueprintGrpcClientService(grpcClientProperties: GrpcClientProperties):
+            BluePrintGrpcClientService {
+<span class="fc" id="L78">        when (grpcClientProperties) {</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            is TokenAuthGrpcClientProperties -&gt; {</span>
+<span class="fc" id="L80">                return TokenAuthGrpcClientService(grpcClientProperties)</span>
+            }
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            is BasicAuthGrpcClientProperties -&gt; {</span>
+<span class="fc" id="L83">                return BasicAuthGrpcClientService(grpcClientProperties)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L86">                throw BluePrintProcessorException(&quot;couldn't get grpc service for type(${grpcClientProperties.type})&quot;)</span>
+            }
+        }
+    }
+
+    private fun tokenAuthGrpcClientProperties(prefix: String): TokenAuthGrpcClientProperties {
+<span class="fc" id="L92">        return bluePrintProperties.propertyBeanType(prefix, TokenAuthGrpcClientProperties::class.java)</span>
+    }
+
+    private fun basicAuthGrpcClientProperties(prefix: String): BasicAuthGrpcClientProperties {
+<span class="fc" id="L96">        return bluePrintProperties.propertyBeanType(prefix, BasicAuthGrpcClientProperties::class.java)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

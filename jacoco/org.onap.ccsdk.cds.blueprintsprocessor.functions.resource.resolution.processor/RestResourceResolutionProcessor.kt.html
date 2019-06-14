@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RestResourceResolutionProcessor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor</a> &gt; <span class="el_source">RestResourceResolutionProcessor.kt</span></div><h1>RestResourceResolutionProcessor.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2018 IBM.
+ *  Modifications Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor
+
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.MissingNode
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.RestResourceSource
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils.ResourceAssignmentUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyService
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BlueprintWebClientService
+import org.onap.ccsdk.cds.controllerblueprints.core.*
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.context.annotation.Scope
+import org.springframework.stereotype.Service
+
+/**
+ * RestResourceResolutionProcessor
+ *
+ * @author Kapil Singal
+ */
+@Service(&quot;${PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-rest&quot;)
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+<span class="pc" id="L42">open class RestResourceResolutionProcessor(private val blueprintRestLibPropertyService: BluePrintRestLibPropertyService)</span>
+<span class="fc" id="L43">    : ResourceAssignmentProcessor() {</span>
+
+<span class="fc" id="L45">    private val logger = LoggerFactory.getLogger(RestResourceResolutionProcessor::class.java)</span>
+
+    override fun getName(): String {
+<span class="nc" id="L48">        return &quot;${PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-rest&quot;</span>
+    }
+
+    override suspend fun processNB(resourceAssignment: ResourceAssignment) {
+<span class="fc" id="L52">        try {</span>
+<span class="fc" id="L53">            validate(resourceAssignment)</span>
+
+            // Check if It has Input
+<span class="fc" id="L56">            val value = getFromInput(resourceAssignment)</span>
+<span class="pc bpc" id="L57" title="2 of 4 branches missed.">            if (value == null || value is MissingNode) {</span>
+<span class="nc" id="L58">                val dName = resourceAssignment.dictionaryName</span>
+<span class="nc" id="L59">                val dSource = resourceAssignment.dictionarySource</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                val resourceDefinition = resourceDictionaries[dName]</span>
+<span class="nc" id="L61">                        ?: throw BluePrintProcessorException(&quot;couldn't get resource dictionary definition for $dName&quot;)</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">                val resourceSource = resourceDefinition.sources[dSource]</span>
+<span class="nc" id="L64">                        ?: throw BluePrintProcessorException(&quot;couldn't get resource definition $dName source($dSource)&quot;)</span>
+
+<span class="nc" id="L66">                val resourceSourceProperties =</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                        checkNotNull(resourceSource.properties) { &quot;failed to get source properties for $dName &quot; }</span>
+
+<span class="nc" id="L69">                val sourceProperties =</span>
+<span class="nc" id="L70">                        JacksonUtils.getInstanceFromMap(resourceSourceProperties, RestResourceSource::class.java)</span>
+
+<span class="nc" id="L72">                val path = nullToEmpty(sourceProperties.path)</span>
+<span class="nc" id="L73">                val inputKeyMapping =</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                    checkNotNull(sourceProperties.inputKeyMapping) { &quot;failed to get input-key-mappings for $dName under $dSource properties&quot; }</span>
+<span class="nc" id="L75">                val resolvedInputKeyMapping = resolveInputKeyMappingVariables(inputKeyMapping).toMutableMap()</span>
+
+                // Resolving content Variables
+<span class="nc" id="L78">                val payload = resolveFromInputKeyMapping(nullToEmpty(sourceProperties.payload), resolvedInputKeyMapping)</span>
+<span class="nc" id="L79">                val urlPath =</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                        resolveFromInputKeyMapping(checkNotNull(sourceProperties.urlPath), resolvedInputKeyMapping)</span>
+<span class="nc" id="L81">                val verb = resolveFromInputKeyMapping(nullToEmpty(sourceProperties.verb), resolvedInputKeyMapping)</span>
+
+<span class="nc" id="L83">                logger.info(&quot;$dSource dictionary information : ($urlPath), ($inputKeyMapping), (${sourceProperties.outputKeyMapping})&quot;)</span>
+                // Get the Rest Client Service
+<span class="nc" id="L85">                val restClientService = blueprintWebClientService(resourceAssignment, sourceProperties)</span>
+
+<span class="nc" id="L87">                val response = restClientService.exchangeResource(verb, urlPath, payload)</span>
+<span class="nc" id="L88">                val responseStatusCode = response.status</span>
+<span class="nc" id="L89">                val responseBody = response.body</span>
+<span class="nc bnc" id="L90" title="All 6 branches missed.">                if (responseStatusCode in 200..299 &amp;&amp; !responseBody.isBlank()) {</span>
+<span class="nc" id="L91">                    populateResource(resourceAssignment, sourceProperties, responseBody, path)</span>
+                } else {
+<span class="nc" id="L93">                    val errMsg = &quot;Failed to get $dSource result for dictionary name ($dName) using urlPath ($urlPath) response_code: ($responseStatusCode)&quot;</span>
+<span class="nc" id="L94">                    logger.warn(errMsg)</span>
+<span class="nc" id="L95">                    throw BluePrintProcessorException(errMsg)</span>
+                }
+            }
+            // Check the value has populated for mandatory case
+<span class="fc" id="L99">            ResourceAssignmentUtils.assertTemplateKeyValueNotNull(resourceAssignment)</span>
+<span class="nc" id="L100">        } catch (e: Exception) {</span>
+<span class="nc" id="L101">            ResourceAssignmentUtils.setFailedResourceDataValue(resourceAssignment, e.message)</span>
+<span class="nc" id="L102">            throw BluePrintProcessorException(&quot;Failed in template key ($resourceAssignment) assignments with: ${e.message}&quot;,</span>
+<span class="nc" id="L103">                    e)</span>
+        }
+<span class="fc" id="L105">    }</span>
+
+    fun blueprintWebClientService(resourceAssignment: ResourceAssignment,
+                                          restResourceSource: RestResourceSource): BlueprintWebClientService {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        return if (isNotEmpty(restResourceSource.endpointSelector)) {</span>
+<span class="nc" id="L110">            val restPropertiesJson = raRuntimeService.resolveDSLExpression(restResourceSource.endpointSelector!!)</span>
+<span class="nc" id="L111">            blueprintRestLibPropertyService.blueprintWebClientService(restPropertiesJson)</span>
+        } else {
+<span class="nc" id="L113">            blueprintRestLibPropertyService.blueprintWebClientService(resourceAssignment.dictionarySource!!)</span>
+        }
+    }
+
+    @Throws(BluePrintProcessorException::class)
+    private fun populateResource(resourceAssignment: ResourceAssignment, sourceProperties: RestResourceSource,
+                                 restResponse: String, path: String) {
+<span class="nc" id="L120">        val dName = resourceAssignment.dictionaryName</span>
+<span class="nc" id="L121">        val dSource = resourceAssignment.dictionarySource</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        val type = nullToEmpty(resourceAssignment.property?.type)</span>
+<span class="nc" id="L123">        lateinit var entrySchemaType: String</span>
+
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        val outputKeyMapping = checkNotNull(sourceProperties.outputKeyMapping) {</span>
+<span class="nc" id="L126">            &quot;failed to get output-key-mappings for $dName under $dSource properties&quot;</span>
+        }
+<span class="nc" id="L128">        logger.info(&quot;Response processing type($type)&quot;)</span>
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        val responseNode = checkNotNull(JacksonUtils.jsonNode(restResponse).at(path)) {</span>
+<span class="nc" id="L131">            &quot;Failed to find path ($path) in response ($restResponse)&quot;</span>
+        }
+<span class="nc" id="L133">        logger.info(&quot;populating value for output mapping ($outputKeyMapping), from json ($responseNode)&quot;)</span>
+
+
+<span class="nc" id="L136">        when (type) {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            in BluePrintTypes.validPrimitiveTypes() -&gt; {</span>
+<span class="nc" id="L138">                logger.info(&quot;For template key (${resourceAssignment.name}) setting value as ($responseNode)&quot;)</span>
+<span class="nc" id="L139">                ResourceAssignmentUtils.setResourceDataValue(resourceAssignment, raRuntimeService, responseNode)</span>
+            }
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            in BluePrintTypes.validCollectionTypes() -&gt; {</span>
+                // Array Types
+<span class="nc bnc" id="L143" title="All 4 branches missed.">                entrySchemaType = checkNotEmpty(resourceAssignment.property?.entrySchema?.type) {</span>
+<span class="nc" id="L144">                    &quot;Entry schema is not defined for dictionary ($dName) info&quot;</span>
+                }
+<span class="nc" id="L146">                val arrayNode = responseNode as ArrayNode</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                if (entrySchemaType !in BluePrintTypes.validPrimitiveTypes()) {</span>
+
+<span class="nc" id="L150">                    val responseArrayNode = responseNode.toList()</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                    for (responseSingleJsonNode in responseArrayNode) {</span>
+
+<span class="nc" id="L153">                        val arrayChildNode = JacksonUtils.objectMapper.createObjectNode()</span>
+
+<span class="nc" id="L155">                        outputKeyMapping.map {</span>
+<span class="nc" id="L156">                            val responseKeyValue = responseSingleJsonNode.get(it.key)</span>
+<span class="nc" id="L157">                            val propertyTypeForDataType = ResourceAssignmentUtils</span>
+<span class="nc" id="L158">                                    .getPropertyType(raRuntimeService, entrySchemaType, it.key)</span>
+
+<span class="nc" id="L160">                            logger.info(&quot;For List Type Resource: key (${it.key}), value ($responseKeyValue), &quot; +</span>
+<span class="nc" id="L161">                                    &quot;type  ({$propertyTypeForDataType})&quot;)</span>
+
+<span class="nc" id="L163">                            JacksonUtils.populateJsonNodeValues(it.value,</span>
+<span class="nc" id="L164">                                    responseKeyValue, propertyTypeForDataType, arrayChildNode)</span>
+<span class="nc" id="L165">                        }</span>
+<span class="nc" id="L166">                        arrayNode.add(arrayChildNode)</span>
+                    }
+                }
+<span class="nc" id="L169">                logger.info(&quot;For template key (${resourceAssignment.name}) setting value as ($arrayNode)&quot;)</span>
+                // Set the List of Complex Values
+<span class="nc" id="L171">                ResourceAssignmentUtils.setResourceDataValue(resourceAssignment, raRuntimeService, arrayNode)</span>
+            }
+            else -&gt; {
+                // Complex Types
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                entrySchemaType = checkNotEmpty(resourceAssignment.property?.type) {</span>
+<span class="nc" id="L176">                    &quot;Entry schema is not defined for dictionary ($dName) info&quot;</span>
+                }
+<span class="nc" id="L178">                val objectNode = JacksonUtils.objectMapper.createObjectNode()</span>
+<span class="nc" id="L179">                outputKeyMapping.map {</span>
+<span class="nc" id="L180">                    val responseKeyValue = responseNode.get(it.key)</span>
+<span class="nc" id="L181">                    val propertyTypeForDataType = ResourceAssignmentUtils</span>
+<span class="nc" id="L182">                            .getPropertyType(raRuntimeService, entrySchemaType, it.key)</span>
+
+<span class="nc" id="L184">                    logger.info(&quot;For List Type Resource: key (${it.key}), value ($responseKeyValue), type  ({$propertyTypeForDataType})&quot;)</span>
+<span class="nc" id="L185">                    JacksonUtils.populateJsonNodeValues(it.value, responseKeyValue, propertyTypeForDataType, objectNode)</span>
+<span class="nc" id="L186">                }</span>
+
+<span class="nc" id="L188">                logger.info(&quot;For template key (${resourceAssignment.name}) setting value as ($objectNode)&quot;)</span>
+                // Set the List of Complex Values
+<span class="nc" id="L190">                ResourceAssignmentUtils.setResourceDataValue(resourceAssignment, raRuntimeService, objectNode)</span>
+            }
+        }
+<span class="nc" id="L193">    }</span>
+
+    @Throws(BluePrintProcessorException::class)
+    private fun validate(resourceAssignment: ResourceAssignment) {
+<span class="pc" id="L197">        checkNotEmpty(resourceAssignment.name) { &quot;resource assignment template key is not defined&quot; }</span>
+<span class="fc" id="L198">        checkNotEmpty(resourceAssignment.dictionaryName) {</span>
+<span class="nc" id="L199">            &quot;resource assignment dictionary name is not defined for template key (${resourceAssignment.name})&quot;</span>
+        }
+<span class="fc" id="L201">        checkNotEmpty(resourceAssignment.dictionarySource) {</span>
+<span class="nc" id="L202">            &quot;resource assignment dictionary source is not defined for template key (${resourceAssignment.name})&quot;</span>
+        }
+<span class="fc" id="L204">    }</span>
+
+    override suspend fun recoverNB(runtimeException: RuntimeException, resourceAssignment: ResourceAssignment) {
+<span class="nc" id="L207">        raRuntimeService.getBluePrintError().addError(runtimeException.message!!)</span>
+<span class="nc" id="L208">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BluePrintRestLibPropertyService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.rest.service</a> &gt; <span class="el_source">BluePrintRestLibPropertyService.kt</span></div><h1>BluePrintRestLibPropertyService.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada
+ * Modifications Copyright © 2019 IBM.
+ * Modifications Copyright © 2019 Huawei.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.rest.service
+
+import com.fasterxml.jackson.databind.JsonNode
+import org.onap.ccsdk.cds.blueprintsprocessor.core.BluePrintProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.BasicAuthRestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.DME2RestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.PolicyManagerRestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.RestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.RestLibConstants
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.SSLBasicAuthRestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.SSLRestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.SSLTokenAuthRestClientProperties
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.TokenAuthRestClientProperties
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.springframework.stereotype.Service
+
+@Service(RestLibConstants.SERVICE_BLUEPRINT_REST_LIB_PROPERTY)
+<span class="fc" id="L37">open class BluePrintRestLibPropertyService(private var bluePrintProperties:</span>
+                                           BluePrintProperties) {
+
+    fun blueprintWebClientService(jsonNode: JsonNode):
+            BlueprintWebClientService {
+<span class="fc" id="L42">        val restClientProperties = restClientProperties(jsonNode)</span>
+<span class="fc" id="L43">        return blueprintWebClientService(restClientProperties)</span>
+    }
+
+    fun blueprintWebClientService(selector: String): BlueprintWebClientService {
+<span class="fc" id="L47">        val prefix = &quot;blueprintsprocessor.restclient.$selector&quot;</span>
+<span class="fc" id="L48">        val restClientProperties = restClientProperties(prefix)</span>
+<span class="fc" id="L49">        return blueprintWebClientService(restClientProperties)</span>
+    }
+
+    fun restClientProperties(prefix: String): RestClientProperties {
+<span class="fc" id="L53">        val type = bluePrintProperties.propertyBeanType(</span>
+<span class="fc" id="L54">                &quot;$prefix.type&quot;, String::class.java)</span>
+<span class="pc bpc" id="L55" title="4 of 8 branches missed.">        return when (type) {</span>
+            RestLibConstants.TYPE_BASIC_AUTH -&gt; {
+<span class="fc" id="L57">                basicAuthRestClientProperties(prefix)</span>
+            }
+            RestLibConstants.TYPE_TOKEN_AUTH -&gt; {
+<span class="nc" id="L60">                tokenRestClientProperties(prefix)</span>
+            }
+            RestLibConstants.TYPE_SSL_BASIC_AUTH -&gt; {
+<span class="fc" id="L63">                sslBasicAuthRestClientProperties(prefix)</span>
+            }
+            RestLibConstants.TYPE_SSL_TOKEN_AUTH -&gt; {
+<span class="fc" id="L66">                sslTokenAuthRestClientProperties(prefix)</span>
+            }
+            RestLibConstants.TYPE_SSL_NO_AUTH -&gt; {
+<span class="fc" id="L69">                sslNoAuthRestClientProperties(prefix)</span>
+            }
+            RestLibConstants.TYPE_DME2_PROXY -&gt; {
+<span class="nc" id="L72">                dme2ProxyClientProperties(prefix)</span>
+            }
+            RestLibConstants.TYPE_POLICY_MANAGER -&gt; {
+<span class="nc" id="L75">                policyManagerRestClientProperties(prefix)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L78">                throw BluePrintProcessorException(&quot;Rest adaptor($type) is&quot; +</span>
+                        &quot; not supported&quot;)
+            }
+        }
+    }
+
+    fun restClientProperties(jsonNode: JsonNode): RestClientProperties {
+
+<span class="fc" id="L86">        val type = jsonNode.get(&quot;type&quot;).textValue()</span>
+<span class="pc bpc" id="L87" title="6 of 10 branches missed.">        return when (type) {</span>
+            RestLibConstants.TYPE_TOKEN_AUTH -&gt; {
+<span class="nc" id="L89">                JacksonUtils.readValue(jsonNode,</span>
+<span class="nc" id="L90">                        TokenAuthRestClientProperties::class.java)!!</span>
+            }
+            RestLibConstants.TYPE_BASIC_AUTH -&gt; {
+<span class="fc" id="L93">                JacksonUtils.readValue(jsonNode,</span>
+<span class="fc" id="L94">                        BasicAuthRestClientProperties::class.java)!!</span>
+            }
+            RestLibConstants.TYPE_DME2_PROXY -&gt; {
+<span class="nc" id="L97">                JacksonUtils.readValue(jsonNode,</span>
+<span class="nc" id="L98">                        DME2RestClientProperties::class.java)!!</span>
+            }
+            RestLibConstants.TYPE_POLICY_MANAGER -&gt; {
+<span class="nc" id="L101">                JacksonUtils.readValue(jsonNode,</span>
+<span class="nc" id="L102">                        PolicyManagerRestClientProperties::class.java)!!</span>
+            }
+            RestLibConstants.TYPE_SSL_BASIC_AUTH -&gt; {
+<span class="fc" id="L105">                JacksonUtils.readValue(jsonNode,</span>
+<span class="fc" id="L106">                        SSLBasicAuthRestClientProperties::class.java)!!</span>
+            }
+            RestLibConstants.TYPE_SSL_TOKEN_AUTH -&gt; {
+<span class="fc" id="L109">                JacksonUtils.readValue(jsonNode,</span>
+<span class="fc" id="L110">                        SSLTokenAuthRestClientProperties::class.java)!!</span>
+            }
+            RestLibConstants.TYPE_SSL_NO_AUTH -&gt; {
+<span class="nc" id="L113">                JacksonUtils.readValue(</span>
+<span class="nc" id="L114">                        jsonNode, SSLRestClientProperties::class.java)!!</span>
+            }
+            else -&gt; {
+<span class="nc" id="L117">                throw BluePrintProcessorException(&quot;Rest adaptor($type) is&quot; +</span>
+                        &quot; not supported&quot;)
+            }
+        }
+    }
+    
+    private fun blueprintWebClientService(
+            restClientProperties: RestClientProperties):
+            BlueprintWebClientService {
+
+<span class="fc" id="L127">        when (restClientProperties) {</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            is SSLRestClientProperties -&gt; {</span>
+<span class="fc" id="L129">                return SSLRestClientService(restClientProperties)</span>
+            }
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            is TokenAuthRestClientProperties -&gt; {</span>
+<span class="nc" id="L132">                return TokenAuthRestClientService(restClientProperties)</span>
+            }
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">            is BasicAuthRestClientProperties -&gt; {</span>
+<span class="fc" id="L135">                return BasicAuthRestClientService(restClientProperties)</span>
+            }
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            is DME2RestClientProperties -&gt; {</span>
+<span class="nc" id="L138">                return DME2ProxyRestClientService(restClientProperties)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L141">                throw BluePrintProcessorException(&quot;couldn't get rest &quot; +</span>
+                        &quot;service for&quot;)
+            }
+        }
+    }
+
+    private fun tokenRestClientProperties(prefix: String):
+            TokenAuthRestClientProperties {
+<span class="nc" id="L149">        return bluePrintProperties.propertyBeanType(</span>
+<span class="nc" id="L150">                prefix, TokenAuthRestClientProperties::class.java)</span>
+    }
+
+    private fun basicAuthRestClientProperties(prefix: String):
+            BasicAuthRestClientProperties {
+<span class="fc" id="L155">        return bluePrintProperties.propertyBeanType(</span>
+<span class="fc" id="L156">                prefix, BasicAuthRestClientProperties::class.java)</span>
+    }
+
+    private fun sslBasicAuthRestClientProperties(prefix: String):
+            SSLRestClientProperties {
+
+<span class="fc" id="L162">        val sslProps: SSLBasicAuthRestClientProperties =</span>
+<span class="fc" id="L163">                bluePrintProperties.propertyBeanType(</span>
+<span class="fc" id="L164">                        prefix, SSLBasicAuthRestClientProperties::class.java)</span>
+<span class="fc" id="L165">        val basicProps : BasicAuthRestClientProperties =</span>
+<span class="fc" id="L166">                bluePrintProperties.propertyBeanType(</span>
+<span class="fc" id="L167">                        prefix, BasicAuthRestClientProperties::class.java)</span>
+<span class="fc" id="L168">        sslProps.basicAuth = basicProps</span>
+<span class="fc" id="L169">        return sslProps</span>
+    }
+
+    private fun sslTokenAuthRestClientProperties(prefix: String):
+            SSLRestClientProperties {
+
+<span class="fc" id="L175">        val sslProps: SSLTokenAuthRestClientProperties =</span>
+<span class="fc" id="L176">                bluePrintProperties.propertyBeanType(prefix,</span>
+<span class="fc" id="L177">                        SSLTokenAuthRestClientProperties::class.java)</span>
+<span class="fc" id="L178">        val basicProps : TokenAuthRestClientProperties =</span>
+<span class="fc" id="L179">                bluePrintProperties.propertyBeanType(prefix,</span>
+<span class="fc" id="L180">                        TokenAuthRestClientProperties::class.java)</span>
+<span class="fc" id="L181">        sslProps.tokenAuth = basicProps</span>
+<span class="fc" id="L182">        return sslProps</span>
+    }
+
+    private fun sslNoAuthRestClientProperties(prefix: String):
+            SSLRestClientProperties {
+<span class="fc" id="L187">        return bluePrintProperties.propertyBeanType(</span>
+<span class="fc" id="L188">                prefix, SSLRestClientProperties::class.java)</span>
+    }
+
+    private fun dme2ProxyClientProperties(prefix: String):
+            DME2RestClientProperties {
+<span class="nc" id="L193">        return bluePrintProperties.propertyBeanType(</span>
+<span class="nc" id="L194">                prefix, DME2RestClientProperties::class.java)</span>
+    }
+
+    private fun policyManagerRestClientProperties(prefix: String):
+            PolicyManagerRestClientProperties {
+<span class="nc" id="L199">        return bluePrintProperties.propertyBeanType(</span>
+<span class="nc" id="L200">                prefix, PolicyManagerRestClientProperties::class.java)</span>
+    }
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CapabilityResourceResolutionProcessor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor</a> &gt; <span class="el_source">CapabilityResourceResolutionProcessor.kt</span></div><h1>CapabilityResourceResolutionProcessor.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *
+ * Modifications Copyright © 2019 IBM, Bell Canada.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor
+
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.CapabilityResourceSource
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR
+import org.onap.ccsdk.cds.blueprintsprocessor.services.execution.ComponentFunctionScriptingService
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.context.ApplicationContext
+import org.springframework.context.annotation.Scope
+import org.springframework.stereotype.Service
+
+@Service(&quot;${PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-capability&quot;)
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+<span class="pc" id="L35">open class CapabilityResourceResolutionProcessor(private val applicationContext: ApplicationContext,</span>
+                                                 private var componentFunctionScriptingService: ComponentFunctionScriptingService)
+<span class="fc" id="L37">    : ResourceAssignmentProcessor() {</span>
+
+<span class="fc" id="L39">    private val log = LoggerFactory.getLogger(CapabilityResourceResolutionProcessor::class.java)</span>
+
+<span class="nc" id="L41">    var componentResourceAssignmentProcessor: ResourceAssignmentProcessor? = null</span>
+
+    override fun getName(): String {
+<span class="nc" id="L44">        return &quot;${PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-capability&quot;</span>
+    }
+
+<span class="fc" id="L47">    override suspend fun processNB(resourceAssignment: ResourceAssignment) {</span>
+
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        val resourceDefinition = resourceDictionaries[resourceAssignment.dictionaryName]</span>
+<span class="nc" id="L50">                ?: throw BluePrintProcessorException(&quot;couldn't get resource definition for ${resourceAssignment.dictionaryName}&quot;)</span>
+
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        val resourceSource = resourceDefinition.sources[resourceAssignment.dictionarySource]</span>
+<span class="nc" id="L53">                ?: throw BluePrintProcessorException(&quot;couldn't get resource definition &quot; +</span>
+<span class="nc" id="L54">                        &quot;${resourceAssignment.dictionaryName} source(${resourceAssignment.dictionarySource})&quot;)</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        val resourceSourceProps = checkNotNull(resourceSource.properties) { &quot;failed to get $resourceSource properties&quot; }</span>
+        /**
+         * Get the Capability Resource Source Info from Property Definitions.
+         */
+<span class="fc" id="L60">        val capabilityResourceSourceProperty = JacksonUtils</span>
+<span class="fc" id="L61">                .getInstanceFromMap(resourceSourceProps, CapabilityResourceSource::class.java)</span>
+
+<span class="fc" id="L63">        val scriptType = capabilityResourceSourceProperty.scriptType</span>
+<span class="fc" id="L64">        val scriptClassReference = capabilityResourceSourceProperty.scriptClassReference</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        val instanceDependencies = capabilityResourceSourceProperty.instanceDependencies ?: listOf()</span>
+
+<span class="fc" id="L67">        componentResourceAssignmentProcessor = scriptInstance(scriptType, scriptClassReference, instanceDependencies)</span>
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        checkNotNull(componentResourceAssignmentProcessor) {</span>
+<span class="nc" id="L70">            &quot;failed to get capability resource assignment processor($scriptClassReference)&quot;</span>
+        }
+
+        // Assign Current Blueprint runtime and ResourceDictionaries
+<span class="fc" id="L74">        componentResourceAssignmentProcessor!!.scriptType = scriptType</span>
+<span class="fc" id="L75">        componentResourceAssignmentProcessor!!.raRuntimeService = raRuntimeService</span>
+<span class="fc" id="L76">        componentResourceAssignmentProcessor!!.resourceDictionaries = resourceDictionaries</span>
+
+        // Invoke componentResourceAssignmentProcessor
+<span class="fc" id="L79">        componentResourceAssignmentProcessor!!.executeScript(resourceAssignment)</span>
+    }
+
+    override suspend fun recoverNB(runtimeException: RuntimeException, resourceAssignment: ResourceAssignment) {
+<span class="nc" id="L83">        raRuntimeService.getBluePrintError()</span>
+<span class="nc" id="L84">                .addError(&quot;Failed in ComponentNetconfExecutor : ${runtimeException.message}&quot;)</span>
+<span class="nc" id="L85">    }</span>
+
+    suspend fun scriptInstance(scriptType: String, scriptClassReference: String, instanceDependencies: List&lt;String&gt;)
+            : ResourceAssignmentProcessor {
+
+<span class="fc" id="L90">        log.info(&quot;creating resource resolution of script type($scriptType), reference name($scriptClassReference) and&quot; +</span>
+<span class="fc" id="L91">                &quot;instanceDependencies($instanceDependencies)&quot;)</span>
+
+<span class="fc" id="L93">        val scriptComponent = componentFunctionScriptingService</span>
+<span class="fc" id="L94">                .scriptInstance&lt;ResourceAssignmentProcessor&gt;(raRuntimeService.bluePrintContext(), scriptType,</span>
+<span class="fc" id="L95">                        scriptClassReference)</span>
+
+<span class="fc" id="L97">        instanceDependencies.forEach { instanceDependency -&gt;</span>
+<span class="nc" id="L98">            scriptPropertyInstances[instanceDependency] = applicationContext</span>
+<span class="nc" id="L99">                    .getBean(instanceDependency)</span>
+<span class="nc" id="L100">        }</span>
+<span class="fc" id="L101">        return scriptComponent</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

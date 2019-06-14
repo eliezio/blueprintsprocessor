@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrimaryDatabaseConfiguration.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.db.primary</a> &gt; <span class="el_source">PrimaryDatabaseConfiguration.kt</span></div><h1>PrimaryDatabaseConfiguration.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.db.primary
+
+import org.onap.ccsdk.cds.blueprintsprocessor.db.PrimaryDataSourceProperties
+import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.jdbc.datasource.DriverManagerDataSource
+import org.springframework.orm.jpa.JpaTransactionManager
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter
+import org.springframework.transaction.PlatformTransactionManager
+import java.util.*
+import javax.sql.DataSource
+
+@Configuration
+@EnableJpaRepositories(
+    basePackages = [&quot;org.onap.ccsdk.cds.blueprintsprocessor.*&quot;],
+    entityManagerFactoryRef = &quot;primaryEntityManager&quot;,
+    transactionManagerRef = &quot;primaryTransactionManager&quot;
+)
+<span class="fc" id="L40">open class PrimaryDatabaseConfiguration(private val primaryDataSourceProperties: PrimaryDataSourceProperties) {</span>
+<span class="pc" id="L41">    val log = LoggerFactory.getLogger(PrimaryDatabaseConfiguration::class.java)!!</span>
+
+    @Primary
+    @Bean(&quot;primaryEntityManager&quot;)
+    open fun primaryEntityManager(): LocalContainerEntityManagerFactoryBean {
+<span class="fc" id="L46">        val em = LocalContainerEntityManagerFactoryBean()</span>
+<span class="fc" id="L47">        em.dataSource = primaryDataSource()</span>
+<span class="fc" id="L48">        em.setPackagesToScan(&quot;org.onap.ccsdk.cds.blueprintsprocessor.*&quot;)</span>
+<span class="fc" id="L49">        em.jpaVendorAdapter = HibernateJpaVendorAdapter()</span>
+<span class="fc" id="L50">        val properties = HashMap&lt;String, Any&gt;()</span>
+<span class="fc" id="L51">        properties[&quot;hibernate.hbm2ddl.auto&quot;] = primaryDataSourceProperties.hibernateHbm2ddlAuto</span>
+<span class="fc" id="L52">        properties[&quot;hibernate.dialect&quot;] = primaryDataSourceProperties.hibernateDialect</span>
+<span class="fc" id="L53">        em.jpaPropertyMap = properties</span>
+<span class="fc" id="L54">        return em</span>
+    }
+
+    @Primary
+    @Bean(&quot;primaryDataSource&quot;)
+    open fun primaryDataSource(): DataSource {
+<span class="fc" id="L60">        val dataSource = DriverManagerDataSource()</span>
+<span class="fc" id="L61">        dataSource.setDriverClassName(primaryDataSourceProperties.driverClassName)</span>
+<span class="fc" id="L62">        dataSource.url = primaryDataSourceProperties.url</span>
+<span class="fc" id="L63">        dataSource.username = primaryDataSourceProperties.username</span>
+<span class="fc" id="L64">        dataSource.password = primaryDataSourceProperties.password</span>
+<span class="fc" id="L65">        return dataSource</span>
+    }
+
+    @Primary
+    @Bean(&quot;primaryTransactionManager&quot;)
+    open fun primaryTransactionManager(): PlatformTransactionManager {
+<span class="fc" id="L71">        val transactionManager = JpaTransactionManager()</span>
+<span class="fc" id="L72">        transactionManager.entityManagerFactory = primaryEntityManager().getObject()</span>
+<span class="fc" id="L73">        log.info(&quot;Initialised Primary Transaction Manager for url ${primaryDataSourceProperties.url}&quot;)</span>
+<span class="fc" id="L74">        return transactionManager</span>
+    }
+
+    @Bean(&quot;primaryNamedParameterJdbcTemplate&quot;)
+    open fun primaryNamedParameterJdbcTemplate(primaryDataSource: DataSource): NamedParameterJdbcTemplate {
+<span class="fc" id="L79">        return NamedParameterJdbcTemplate(primaryDataSource)</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

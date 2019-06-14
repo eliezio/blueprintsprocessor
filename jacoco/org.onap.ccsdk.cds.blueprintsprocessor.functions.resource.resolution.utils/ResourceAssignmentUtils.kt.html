@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResourceAssignmentUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils</a> &gt; <span class="el_source">ResourceAssignmentUtils.kt</span></div><h1>ResourceAssignmentUtils.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ * Modifications Copyright © 2019 IBM.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils
+
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.NullNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceAssignmentRuntimeService
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionConstants
+import org.onap.ccsdk.cds.controllerblueprints.core.*
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintRuntimeService
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonReactorUtils
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceDefinition
+import org.slf4j.LoggerFactory
+import java.util.*
+
+<span class="nc" id="L35">class ResourceAssignmentUtils {</span>
+    companion object {
+
+<span class="fc" id="L38">        private val logger = LoggerFactory.getLogger(ResourceAssignmentUtils::class.toString())</span>
+
+        suspend fun resourceDefinitions(blueprintBasePath: String): MutableMap&lt;String, ResourceDefinition&gt; {
+<span class="fc" id="L41">            val dictionaryFile = normalizedFile(blueprintBasePath, BluePrintConstants.TOSCA_DEFINITIONS_DIR,</span>
+<span class="fc" id="L42">                    ResourceResolutionConstants.FILE_NAME_RESOURCE_DEFINITION_TYPES)</span>
+<span class="pc" id="L43">            checkFileExists(dictionaryFile) { &quot;resource definition file(${dictionaryFile.absolutePath}) is missing&quot; }</span>
+<span class="fc" id="L44">            return JacksonReactorUtils.getMapFromFile(dictionaryFile, ResourceDefinition::class.java)</span>
+        }
+
+        @Throws(BluePrintProcessorException::class)
+        fun setResourceDataValue(resourceAssignment: ResourceAssignment,
+                                 raRuntimeService: ResourceAssignmentRuntimeService, value: Any?) {
+            // TODO(&quot;See if Validation is needed in future with respect to conversion and Types&quot;)
+<span class="fc" id="L51">            return setResourceDataValue(resourceAssignment, raRuntimeService, value.asJsonType())</span>
+        }
+
+        @Throws(BluePrintProcessorException::class)
+        fun setResourceDataValue(resourceAssignment: ResourceAssignment,
+                                 raRuntimeService: ResourceAssignmentRuntimeService, value: JsonNode) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            val resourceProp = checkNotNull(resourceAssignment.property) {</span>
+<span class="nc" id="L58">                &quot;Failed in setting resource value for resource mapping $resourceAssignment&quot;</span>
+            }
+<span class="fc" id="L60">            checkNotEmpty(resourceAssignment.name) {</span>
+<span class="nc" id="L61">                &quot;Failed in setting resource value for resource mapping $resourceAssignment&quot;</span>
+            }
+
+<span class="pc bpc" id="L64" title="3 of 6 branches missed.">            if (resourceAssignment.dictionaryName.isNullOrEmpty()) {</span>
+<span class="nc" id="L65">                resourceAssignment.dictionaryName = resourceAssignment.name</span>
+<span class="nc" id="L66">                logger.warn(&quot;Missing dictionary key, setting with template key (${resourceAssignment.name}) &quot; +</span>
+<span class="nc" id="L67">                        &quot;as dictionary key (${resourceAssignment.dictionaryName})&quot;)</span>
+            }
+
+<span class="fc" id="L70">            try {</span>
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">                if (resourceProp.type.isNotEmpty()) {</span>
+<span class="fc" id="L72">                    logger.info(&quot;Setting Resource Value ($value) for Resource Name &quot; +</span>
+<span class="fc" id="L73">                            &quot;(${resourceAssignment.dictionaryName}) of type (${resourceProp.type})&quot;)</span>
+<span class="fc" id="L74">                    setResourceValue(resourceAssignment, raRuntimeService, value)</span>
+<span class="fc" id="L75">                    resourceAssignment.updatedDate = Date()</span>
+<span class="fc" id="L76">                    resourceAssignment.updatedBy = BluePrintConstants.USER_SYSTEM</span>
+<span class="fc" id="L77">                    resourceAssignment.status = BluePrintConstants.STATUS_SUCCESS</span>
+                }
+<span class="nc" id="L79">            } catch (e: Exception) {</span>
+<span class="nc" id="L80">                throw BluePrintProcessorException(&quot;Failed in setting value for template key &quot; +</span>
+<span class="nc" id="L81">                        &quot;(${resourceAssignment.name}) and dictionary key (${resourceAssignment.dictionaryName}) of &quot; +</span>
+<span class="nc" id="L82">                        &quot;type (${resourceProp.type}) with error message (${e.message})&quot;, e)</span>
+            }
+<span class="fc" id="L84">        }</span>
+
+        private fun setResourceValue(resourceAssignment: ResourceAssignment,
+                                     raRuntimeService: ResourceAssignmentRuntimeService, value: JsonNode) {
+            // TODO(&quot;See if Validation is needed wrt to type before storing&quot;)
+<span class="fc" id="L89">            raRuntimeService.putResolutionStore(resourceAssignment.name, value)</span>
+<span class="fc" id="L90">            raRuntimeService.putDictionaryStore(resourceAssignment.dictionaryName!!, value)</span>
+<span class="fc" id="L91">            resourceAssignment.property!!.value = value</span>
+<span class="fc" id="L92">        }</span>
+
+        fun setFailedResourceDataValue(resourceAssignment: ResourceAssignment, message: String?) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (isNotEmpty(resourceAssignment.name)) {</span>
+<span class="fc" id="L96">                resourceAssignment.updatedDate = Date()</span>
+<span class="fc" id="L97">                resourceAssignment.updatedBy = BluePrintConstants.USER_SYSTEM</span>
+<span class="fc" id="L98">                resourceAssignment.status = BluePrintConstants.STATUS_FAILURE</span>
+<span class="fc" id="L99">                resourceAssignment.message = message</span>
+            }
+<span class="fc" id="L101">        }</span>
+
+        @Throws(BluePrintProcessorException::class)
+        fun assertTemplateKeyValueNotNull(resourceAssignment: ResourceAssignment) {
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            val resourceProp = checkNotNull(resourceAssignment.property) {</span>
+<span class="nc" id="L106">                &quot;Failed to populate mandatory resource resource mapping $resourceAssignment&quot;</span>
+            }
+            if (resourceProp.required != null &amp;&amp; resourceProp.required!!
+<span class="pc bpc" id="L109" title="7 of 8 branches missed.">                    &amp;&amp; (resourceProp.value == null || resourceProp.value !is NullNode)) {</span>
+<span class="nc" id="L110">                logger.error(&quot;failed to populate mandatory resource mapping ($resourceAssignment)&quot;)</span>
+<span class="nc" id="L111">                throw BluePrintProcessorException(&quot;failed to populate mandatory resource mapping ($resourceAssignment)&quot;)</span>
+            }
+<span class="fc" id="L113">        }</span>
+
+        @Throws(BluePrintProcessorException::class)
+        fun generateResourceDataForAssignments(assignments: List&lt;ResourceAssignment&gt;): String {
+<span class="fc" id="L117">            val result: String</span>
+<span class="fc" id="L118">            try {</span>
+<span class="fc" id="L119">                val mapper = ObjectMapper()</span>
+<span class="fc" id="L120">                val root: ObjectNode = mapper.createObjectNode()</span>
+
+<span class="fc" id="L122">                assignments.forEach {</span>
+<span class="pc bpc" id="L123" title="2 of 4 branches missed.">                    if (isNotEmpty(it.name) &amp;&amp; it.property != null) {</span>
+<span class="fc" id="L124">                        val rName = it.name</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">                        val type = nullToEmpty(it.property?.type).toLowerCase()</span>
+<span class="fc" id="L126">                        val value = useDefaultValueIfNull(it, rName)</span>
+<span class="fc" id="L127">                        logger.info(&quot;Generating Resource name ($rName), type ($type), value ($value)&quot;)</span>
+<span class="fc" id="L128">                        root.set(rName, value)</span>
+                    }
+<span class="fc" id="L130">                }</span>
+<span class="fc" id="L131">                result = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root)</span>
+<span class="fc" id="L132">                logger.info(&quot;Generated Resource Param Data ($result)&quot;)</span>
+<span class="nc" id="L133">            } catch (e: Exception) {</span>
+<span class="nc" id="L134">                throw BluePrintProcessorException(&quot;Resource Assignment is failed with $e.message&quot;, e)</span>
+            }
+
+<span class="fc" id="L137">            return result</span>
+        }
+
+        private fun useDefaultValueIfNull(resourceAssignment: ResourceAssignment, resourceAssignmentName: String): JsonNode {
+<span class="pc bpc" id="L141" title="1 of 4 branches missed.">            if (resourceAssignment.property?.value == null) {</span>
+<span class="fc" id="L142">                val defaultValue = &quot;\${$resourceAssignmentName}&quot;</span>
+<span class="fc" id="L143">                return TextNode(defaultValue)</span>
+            } else {
+<span class="fc" id="L145">                return resourceAssignment.property!!.value!!</span>
+            }
+        }
+
+        fun transformToRARuntimeService(blueprintRuntimeService: BluePrintRuntimeService&lt;*&gt;,
+                                        templateArtifactName: String): ResourceAssignmentRuntimeService {
+
+<span class="fc" id="L152">            val resourceAssignmentRuntimeService = ResourceAssignmentRuntimeService(blueprintRuntimeService.id(),</span>
+<span class="fc" id="L153">                    blueprintRuntimeService.bluePrintContext())</span>
+<span class="fc" id="L154">            resourceAssignmentRuntimeService.createUniqueId(templateArtifactName)</span>
+<span class="fc" id="L155">            resourceAssignmentRuntimeService.setExecutionContext(blueprintRuntimeService.getExecutionContext() as MutableMap&lt;String, JsonNode&gt;)</span>
+
+<span class="fc" id="L157">            return resourceAssignmentRuntimeService</span>
+        }
+
+        @Throws(BluePrintProcessorException::class)
+        fun getPropertyType(raRuntimeService: ResourceAssignmentRuntimeService, dataTypeName: String,
+                            propertyName: String): String {
+<span class="nc" id="L163">            lateinit var type: String</span>
+<span class="nc" id="L164">            try {</span>
+<span class="nc bnc" id="L165" title="All 4 branches missed.">                val dataTypeProps = checkNotNull(raRuntimeService.bluePrintContext().dataTypeByName(dataTypeName)?.properties)</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                val propertyDefinition = checkNotNull(dataTypeProps[propertyName])</span>
+<span class="nc" id="L168">                type = checkNotEmpty(propertyDefinition.type) { &quot;Couldn't get data type ($dataTypeName)&quot; }</span>
+<span class="nc" id="L169">                logger.trace(&quot;Data type({})'s property ({}) is ({})&quot;, dataTypeName, propertyName, type)</span>
+<span class="nc" id="L170">            } catch (e: Exception) {</span>
+<span class="nc" id="L171">                logger.error(&quot;couldn't get data type($dataTypeName)'s property ($propertyName), error message $e&quot;)</span>
+<span class="nc" id="L172">                throw BluePrintProcessorException(&quot;${e.message}&quot;, e)</span>
+            }
+<span class="nc" id="L174">            return type</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

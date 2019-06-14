@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BluePrintMappings.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.utils</a> &gt; <span class="el_source">BluePrintMappings.kt</span></div><h1>BluePrintMappings.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (C) 2019 Bell Canada.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.utils
+
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.google.common.base.Strings
+import com.google.protobuf.Struct
+import com.google.protobuf.util.JsonFormat
+import org.onap.ccsdk.cds.controllerblueprints.common.api.ActionIdentifiers
+import org.onap.ccsdk.cds.controllerblueprints.common.api.CommonHeader
+import org.onap.ccsdk.cds.controllerblueprints.common.api.EventType
+import org.onap.ccsdk.cds.controllerblueprints.common.api.Flag
+import org.onap.ccsdk.cds.controllerblueprints.common.api.Status
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.onap.ccsdk.cds.controllerblueprints.processing.api.ExecutionServiceInput
+import org.onap.ccsdk.cds.controllerblueprints.processing.api.ExecutionServiceOutput
+import java.text.SimpleDateFormat
+import java.util.*
+
+<span class="fc" id="L33">private val formatter = SimpleDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ss.SSS'Z'&quot;)</span>
+
+// ACTION IDENTIFIER
+
+fun org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ActionIdentifiers.toProto(): ActionIdentifiers {
+<span class="fc" id="L38">    val actionIdentifier = ActionIdentifiers.newBuilder()</span>
+<span class="fc" id="L39">    actionIdentifier.actionName = this.actionName</span>
+<span class="fc" id="L40">    actionIdentifier.blueprintName = this.blueprintName</span>
+<span class="fc" id="L41">    actionIdentifier.blueprintVersion = this.blueprintVersion</span>
+<span class="fc" id="L42">    actionIdentifier.mode = this.mode</span>
+<span class="fc" id="L43">    return actionIdentifier.build()</span>
+}
+
+fun ActionIdentifiers.toJava(): org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ActionIdentifiers {
+<span class="fc" id="L47">    val actionIdentifier = org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ActionIdentifiers()</span>
+<span class="fc" id="L48">    actionIdentifier.actionName = this.actionName</span>
+<span class="fc" id="L49">    actionIdentifier.blueprintName = this.blueprintName</span>
+<span class="fc" id="L50">    actionIdentifier.blueprintVersion = this.blueprintVersion</span>
+<span class="fc" id="L51">    actionIdentifier.mode = this.mode</span>
+<span class="fc" id="L52">    return actionIdentifier</span>
+}
+
+// COMMON HEADER
+
+fun org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.CommonHeader.toProto(): CommonHeader {
+<span class="fc" id="L58">    val commonHeader = CommonHeader.newBuilder()</span>
+<span class="fc" id="L59">    commonHeader.originatorId = this.originatorId</span>
+<span class="fc" id="L60">    commonHeader.requestId = this.requestId</span>
+<span class="fc" id="L61">    commonHeader.subRequestId = this.subRequestId</span>
+<span class="fc" id="L62">    commonHeader.timestamp = this.timestamp.toString()</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">    commonHeader.flag = this.flags?.toProto()</span>
+<span class="fc" id="L64">    return commonHeader.build()</span>
+}
+
+fun CommonHeader.toJava(): org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.CommonHeader {
+<span class="fc" id="L68">    val commonHeader = org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.CommonHeader()</span>
+<span class="fc" id="L69">    commonHeader.originatorId = this.originatorId</span>
+<span class="fc" id="L70">    commonHeader.requestId = this.requestId</span>
+<span class="fc" id="L71">    commonHeader.subRequestId = this.subRequestId</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">    commonHeader.timestamp = if (!Strings.isNullOrEmpty(this.timestamp)) {</span>
+<span class="fc" id="L73">        formatter.parse(this.timestamp)</span>
+    } else {
+<span class="nc" id="L75">        Date()</span>
+    }
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">    commonHeader.flags = this.flag?.toJava()</span>
+<span class="fc" id="L78">    return commonHeader</span>
+}
+
+// FLAG
+
+fun org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.Flags.toProto(): Flag {
+<span class="fc" id="L84">    val flag = Flag.newBuilder()</span>
+<span class="fc" id="L85">    flag.isForce = this.isForce</span>
+<span class="fc" id="L86">    flag.ttl = this.ttl</span>
+<span class="fc" id="L87">    return flag.build()</span>
+}
+
+fun Flag.toJava(): org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.Flags {
+<span class="fc" id="L91">    val flag = org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.Flags()</span>
+<span class="fc" id="L92">    flag.isForce = this.isForce</span>
+<span class="fc" id="L93">    flag.ttl = this.ttl</span>
+<span class="fc" id="L94">    return flag</span>
+}
+
+// STATUS
+
+fun org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.Status.toProto(): Status {
+<span class="fc" id="L100">    val status = Status.newBuilder()</span>
+<span class="fc" id="L101">    status.code = this.code</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">    status.errorMessage = this.errorMessage ?: &quot;&quot;</span>
+<span class="fc" id="L103">    status.message = this.message</span>
+<span class="fc" id="L104">    status.timestamp = this.timestamp.toString()</span>
+<span class="fc" id="L105">    status.eventType = EventType.valueOf(this.eventType)</span>
+<span class="fc" id="L106">    return status.build()</span>
+}
+
+// EXECUTION INPUT
+
+fun ExecutionServiceInput.toJava(): org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceInput {
+<span class="fc" id="L112">    val executionServiceInput = org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceInput()</span>
+<span class="fc" id="L113">    executionServiceInput.actionIdentifiers = this.actionIdentifiers.toJava()</span>
+<span class="fc" id="L114">    executionServiceInput.commonHeader = this.commonHeader.toJava()</span>
+<span class="fc" id="L115">    executionServiceInput.payload = JacksonUtils.jsonNode(JsonFormat.printer().print(this.payload)) as ObjectNode</span>
+<span class="fc" id="L116">    return executionServiceInput</span>
+}
+
+// EXECUTION OUPUT
+
+fun org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceOutput.toProto(): ExecutionServiceOutput {
+<span class="fc" id="L122">    val executionServiceOuput = ExecutionServiceOutput.newBuilder()</span>
+<span class="fc" id="L123">    executionServiceOuput.actionIdentifiers = this.actionIdentifiers.toProto()</span>
+<span class="fc" id="L124">    executionServiceOuput.commonHeader = this.commonHeader.toProto()</span>
+<span class="fc" id="L125">    executionServiceOuput.status = this.status.toProto()</span>
+<span class="fc" id="L126">    val struct = Struct.newBuilder()</span>
+<span class="fc" id="L127">    JsonFormat.parser().merge(JacksonUtils.getJson(this.payload), struct)</span>
+<span class="fc" id="L128">    executionServiceOuput.payload = struct.build()</span>
+<span class="fc" id="L129">    return executionServiceOuput.build()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

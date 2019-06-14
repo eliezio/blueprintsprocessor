@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CliComponentFunction.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.cli.executor</a> &gt; <span class="el_source">CliComponentFunction.kt</span></div><h1>CliComponentFunction.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2019 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.cli.executor
+
+import kotlinx.coroutines.runBlocking
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionConstants
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionService
+import org.onap.ccsdk.cds.blueprintsprocessor.services.execution.AbstractScriptComponentFunction
+import org.onap.ccsdk.cds.blueprintsprocessor.ssh.SshLibConstants
+import org.onap.ccsdk.cds.blueprintsprocessor.ssh.service.BluePrintSshLibPropertyService
+import org.onap.ccsdk.cds.controllerblueprints.core.normalizedFile
+import org.onap.ccsdk.cds.controllerblueprints.core.readNBLines
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintTemplateService
+
+<span class="fc" id="L29">abstract class CliComponentFunction : AbstractScriptComponentFunction() {</span>
+
+    open fun bluePrintSshLibPropertyService(): BluePrintSshLibPropertyService =
+<span class="nc" id="L32">            functionDependencyInstanceAsType(SshLibConstants.SERVICE_BLUEPRINT_SSH_LIB_PROPERTY)</span>
+
+    open fun resourceResolutionService(): ResourceResolutionService =
+<span class="nc" id="L35">            functionDependencyInstanceAsType(ResourceResolutionConstants.SERVICE_RESOURCE_RESOLUTION)</span>
+
+
+    open suspend fun readCommandLinesFromArtifact(artifactName: String): List&lt;String&gt; {
+<span class="nc" id="L39">        val artifactDefinition = bluePrintRuntimeService.resolveNodeTemplateArtifactDefinition(nodeTemplateName, artifactName)</span>
+<span class="nc" id="L40">        val file = normalizedFile(bluePrintRuntimeService.bluePrintContext().rootPath, artifactDefinition.file)</span>
+<span class="nc" id="L41">        return file.readNBLines()</span>
+    }
+
+    suspend fun generateMessage(artifactName: String, json: String): String {
+<span class="nc" id="L45">        val templateService = BluePrintTemplateService()</span>
+<span class="nc" id="L46">        return templateService.generateContent(bluePrintRuntimeService, nodeTemplateName, artifactName, json, true)</span>
+    }
+
+
+    fun generateMessage(artifactName: String): String {
+<span class="nc" id="L51">        return bluePrintRuntimeService.resolveNodeTemplateArtifact(nodeTemplateName, artifactName)</span>
+    }
+
+<span class="nc" id="L54">    fun resolveFromDatabase(resolutionKey: String, artifactName: String): String = runBlocking {</span>
+<span class="nc" id="L55">        resourceResolutionService().resolveFromDatabase(bluePrintRuntimeService, artifactName, resolutionKey)</span>
+<span class="nc" id="L56">    }</span>
+
+<span class="nc" id="L58">    fun resolveAndGenerateMessage(artifactMapping: String, artifactTemplate: String): String = runBlocking {</span>
+<span class="nc" id="L59">        resourceResolutionService().resolveResources(bluePrintRuntimeService, nodeTemplateName,</span>
+<span class="nc" id="L60">                artifactMapping, artifactTemplate)</span>
+<span class="nc" id="L61">    }</span>
+
+<span class="nc" id="L63">    fun resolveAndGenerateMessage(artifactPrefix: String): String = runBlocking {</span>
+<span class="nc" id="L64">        resourceResolutionService().resolveResources(bluePrintRuntimeService, nodeTemplateName,</span>
+<span class="nc" id="L65">                artifactPrefix, mapOf())</span>
+<span class="nc" id="L66">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

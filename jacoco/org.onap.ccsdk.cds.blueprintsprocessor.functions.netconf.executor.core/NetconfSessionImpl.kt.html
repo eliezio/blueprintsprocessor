@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetconfSessionImpl.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.core</a> &gt; <span class="el_source">NetconfSessionImpl.kt</span></div><h1>NetconfSessionImpl.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.core
+
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableSet
+import org.apache.sshd.client.SshClient
+import org.apache.sshd.client.channel.ClientChannel
+import org.apache.sshd.client.session.ClientSession
+import org.apache.sshd.common.FactoryManager
+import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.DeviceInfo
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfException
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfReceivedEvent
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfRpcService
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfSession
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfSessionListener
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.NetconfMessageUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.RpcMessageUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.RpcStatus
+import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.util.Collections
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+
+<span class="fc" id="L44">class NetconfSessionImpl(private val deviceInfo: DeviceInfo, private val rpcService: NetconfRpcService) :</span>
+    NetconfSession {
+
+<span class="fc" id="L47">    private val log = LoggerFactory.getLogger(NetconfSessionImpl::class.java)</span>
+
+<span class="fc" id="L49">    private val errorReplies: MutableList&lt;String&gt; = Collections.synchronizedList(mutableListOf())</span>
+<span class="fc" id="L50">    private val replies: MutableMap&lt;String, CompletableFuture&lt;String&gt;&gt; = ConcurrentHashMap()</span>
+<span class="fc" id="L51">    private val deviceCapabilities = mutableSetOf&lt;String&gt;()</span>
+
+    private var connectionTimeout: Long = 0
+    private var replyTimeout: Int = 0
+    private var idleTimeout: Int = 0
+    private var sessionId: String? = null
+
+    private lateinit var session: ClientSession
+    private lateinit var client: SshClient
+    private lateinit var channel: ClientChannel
+    private lateinit var streamHandler: NetconfDeviceCommunicator
+
+    private var capabilities =
+<span class="fc" id="L64">        ImmutableList.of(RpcMessageUtils.NETCONF_10_CAPABILITY, RpcMessageUtils.NETCONF_11_CAPABILITY)</span>
+
+    override fun connect() {
+<span class="fc" id="L67">        try {</span>
+<span class="fc" id="L68">            log.info(&quot;$deviceInfo: Connecting to Netconf Device with timeouts C:${deviceInfo.connectTimeout}, &quot; +</span>
+<span class="fc" id="L69">                    &quot;R:${deviceInfo.replyTimeout}, I:${deviceInfo.idleTimeout}&quot;)</span>
+<span class="fc" id="L70">            startConnection()</span>
+<span class="fc" id="L71">            log.info(&quot;$deviceInfo: Connected to Netconf Device&quot;)</span>
+<span class="fc" id="L72">        } catch (e: NetconfException) {</span>
+<span class="fc" id="L73">            log.error(&quot;$deviceInfo: Netconf Device Connection Failed. ${e.message}&quot;)</span>
+<span class="fc" id="L74">            throw NetconfException(e)</span>
+        }
+<span class="fc" id="L76">    }</span>
+
+    override fun disconnect() {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (rpcService.closeSession(false).status.equals(</span>
+<span class="fc" id="L80">                RpcStatus.FAILURE, true)) {</span>
+<span class="fc" id="L81">            rpcService.closeSession(true)</span>
+        }
+<span class="fc" id="L83">        try {</span>
+<span class="fc" id="L84">            close()</span>
+<span class="fc" id="L85">        } catch (ioe: IOException) {</span>
+<span class="fc" id="L86">            log.warn(&quot;$deviceInfo: Error closing session($sessionId) for host($deviceInfo)&quot;, ioe)</span>
+        }
+<span class="fc" id="L88">    }</span>
+
+    override fun reconnect() {
+<span class="fc" id="L91">        disconnect()</span>
+<span class="fc" id="L92">        connect()</span>
+<span class="fc" id="L93">    }</span>
+
+    override fun syncRpc(request: String, messageId: String): String {
+<span class="fc" id="L96">        val formattedRequest = NetconfMessageUtils.formatRPCRequest(request, messageId, deviceCapabilities)</span>
+
+<span class="fc" id="L98">        checkAndReestablish()</span>
+
+<span class="fc" id="L100">        try {</span>
+<span class="fc" id="L101">            return streamHandler.getFutureFromSendMessage(streamHandler.sendMessage(formattedRequest, messageId),</span>
+<span class="fc" id="L102">                replyTimeout.toLong(), TimeUnit.SECONDS)</span>
+<span class="fc" id="L103">        } catch (e: InterruptedException) {</span>
+<span class="fc" id="L104">            Thread.currentThread().interrupt()</span>
+<span class="fc" id="L105">            throw NetconfException(&quot;$deviceInfo: Interrupted while waiting for reply for request: $formattedRequest&quot;, e)</span>
+<span class="fc" id="L106">        } catch (e: TimeoutException) {</span>
+<span class="fc" id="L107">            throw NetconfException(&quot;$deviceInfo: Timed out while waiting for reply for request $formattedRequest after $replyTimeout sec.&quot;,</span>
+<span class="fc" id="L108">                e)</span>
+<span class="fc" id="L109">        } catch (e: ExecutionException) {</span>
+<span class="fc" id="L110">            log.warn(&quot;$deviceInfo: Closing session($sessionId) due to unexpected Error&quot;, e)</span>
+<span class="fc" id="L111">            try {</span>
+<span class="fc" id="L112">                close()</span>
+<span class="fc" id="L113">            } catch (ioe: IOException) {</span>
+<span class="fc" id="L114">                log.warn(&quot;$deviceInfo: Error closing session($sessionId) for host($deviceInfo)&quot;, ioe)</span>
+            }
+<span class="fc" id="L116">            clearErrorReplies()</span>
+<span class="fc" id="L117">            clearReplies()</span>
+
+<span class="fc" id="L119">            throw NetconfException(&quot;$deviceInfo: Closing session $sessionId for request $formattedRequest&quot;, e)</span>
+        }
+    }
+
+    override fun asyncRpc(request: String, messageId: String): CompletableFuture&lt;String&gt; {
+<span class="fc" id="L124">        val formattedRequest = NetconfMessageUtils.formatRPCRequest(request, messageId, deviceCapabilities)</span>
+
+<span class="fc" id="L126">        checkAndReestablish()</span>
+
+<span class="fc" id="L128">        return streamHandler.sendMessage(formattedRequest, messageId).handleAsync { reply, t -&gt;</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            if (t != null) {</span>
+<span class="fc" id="L130">                throw NetconfException(messageId, t)</span>
+            }
+<span class="fc" id="L132">            reply</span>
+        }
+    }
+
+    override fun checkAndReestablish() {
+<span class="fc" id="L137">        try {</span>
+            when {
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                client.isClosed -&gt; {</span>
+<span class="fc" id="L140">                    log.info(&quot;Trying to restart the whole SSH connection with {}&quot;, deviceInfo)</span>
+<span class="fc" id="L141">                    clearReplies()</span>
+<span class="fc" id="L142">                    startConnection()</span>
+                }
+<span class="fc bfc" id="L144" title="All 2 branches covered.">                session.isClosed -&gt; {</span>
+<span class="fc" id="L145">                    log.info(&quot;Trying to restart the session with {}&quot;, deviceInfo)</span>
+<span class="fc" id="L146">                    clearReplies()</span>
+<span class="fc" id="L147">                    startSession()</span>
+                }
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                channel.isClosed -&gt; {</span>
+<span class="fc" id="L150">                    log.info(&quot;Trying to reopen the channel with {}&quot;, deviceInfo)</span>
+<span class="fc" id="L151">                    clearReplies()</span>
+<span class="fc" id="L152">                    openChannel()</span>
+                }
+<span class="nc" id="L154">                else -&gt; return</span>
+            }
+<span class="nc" id="L156">        } catch (e: IOException) {</span>
+<span class="nc" id="L157">            log.error(&quot;Can't reopen connection for device {} error: {}&quot;, deviceInfo, e.message)</span>
+<span class="nc" id="L158">            throw NetconfException(String.format(&quot;Cannot re-open the connection with device (%s)&quot;, deviceInfo), e)</span>
+<span class="nc" id="L159">        } catch (e: IllegalStateException) {</span>
+<span class="nc" id="L160">            log.error(&quot;Can't reopen connection for device {} error: {}&quot;, deviceInfo, e.message)</span>
+<span class="nc" id="L161">            throw NetconfException(String.format(&quot;Cannot re-open the connection with device (%s)&quot;, deviceInfo), e)</span>
+        }
+<span class="fc" id="L163">    }</span>
+
+    override fun getDeviceInfo(): DeviceInfo {
+<span class="nc" id="L166">        return deviceInfo</span>
+    }
+
+    override fun getSessionId(): String {
+<span class="nc" id="L170">        return this.sessionId!!</span>
+    }
+
+    override fun getDeviceCapabilitiesSet(): Set&lt;String&gt; {
+<span class="nc" id="L174">        return Collections.unmodifiableSet(deviceCapabilities)</span>
+    }
+
+    private fun startConnection() {
+<span class="fc" id="L178">        connectionTimeout = deviceInfo.connectTimeout</span>
+<span class="fc" id="L179">        replyTimeout = deviceInfo.replyTimeout</span>
+<span class="fc" id="L180">        idleTimeout = deviceInfo.idleTimeout</span>
+<span class="fc" id="L181">        try {</span>
+<span class="fc" id="L182">            startClient()</span>
+<span class="fc" id="L183">        } catch (e: Exception) {</span>
+<span class="fc" id="L184">            throw NetconfException(&quot;$deviceInfo: Failed to establish SSH session&quot;, e)</span>
+        }
+
+<span class="fc" id="L187">    }</span>
+
+    //Needed to unit test connect method interacting with client.start in startClient() below
+    private fun setupNewSSHClient() {
+<span class="nc" id="L191">        client = SshClient.setUpDefaultClient()</span>
+<span class="nc" id="L192">    }</span>
+
+    private fun startClient() {
+<span class="fc" id="L195">        setupNewSSHClient()</span>
+
+<span class="fc" id="L197">        client.properties.putIfAbsent(FactoryManager.IDLE_TIMEOUT, TimeUnit.SECONDS.toMillis(idleTimeout.toLong()))</span>
+<span class="fc" id="L198">        client.properties.putIfAbsent(FactoryManager.NIO2_READ_TIMEOUT, TimeUnit.SECONDS.toMillis(idleTimeout + 15L))</span>
+<span class="fc" id="L199">        client.start()</span>
+
+<span class="fc" id="L201">        startSession()</span>
+<span class="fc" id="L202">    }</span>
+
+    private fun startSession() {
+<span class="fc" id="L205">        log.info(&quot;$deviceInfo: Starting SSH session&quot;)</span>
+<span class="fc" id="L206">        val connectFuture = client.connect(deviceInfo.username, deviceInfo.ipAddress, deviceInfo.port)</span>
+<span class="fc" id="L207">            .verify(connectionTimeout, TimeUnit.SECONDS)</span>
+<span class="fc" id="L208">        session = connectFuture.session</span>
+<span class="fc" id="L209">        log.info(&quot;$deviceInfo: SSH session created&quot;)</span>
+
+<span class="fc" id="L211">        authSession()</span>
+<span class="fc" id="L212">    }</span>
+
+    private fun authSession() {
+<span class="fc" id="L215">        session.addPasswordIdentity(deviceInfo.password)</span>
+<span class="fc" id="L216">        session.auth().verify(connectionTimeout, TimeUnit.SECONDS)</span>
+<span class="fc" id="L217">        val event = session.waitFor(ImmutableSet.of(ClientSession.ClientSessionEvent.WAIT_AUTH,</span>
+<span class="fc" id="L218">            ClientSession.ClientSessionEvent.CLOSED, ClientSession.ClientSessionEvent.AUTHED), 0)</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        if (!event.contains(ClientSession.ClientSessionEvent.AUTHED)) {</span>
+<span class="fc" id="L220">            throw NetconfException(&quot;$deviceInfo: Failed to authenticate session.&quot;)</span>
+        }
+<span class="fc" id="L222">        log.info(&quot;$deviceInfo: SSH session authenticated&quot;)</span>
+
+<span class="fc" id="L224">        openChannel()</span>
+<span class="fc" id="L225">    }</span>
+
+    private fun openChannel() {
+<span class="fc" id="L228">        channel = session.createSubsystemChannel(&quot;netconf&quot;)</span>
+<span class="fc" id="L229">        val channelFuture = channel.open()</span>
+<span class="pc bpc" id="L230" title="1 of 4 branches missed.">        if (channelFuture.await(connectionTimeout, TimeUnit.SECONDS) &amp;&amp; channelFuture.isOpened) {</span>
+<span class="fc" id="L231">            log.info(&quot;$deviceInfo: SSH NETCONF subsystem channel opened&quot;)</span>
+<span class="fc" id="L232">            setupHandler()</span>
+        } else {
+<span class="fc" id="L234">            throw NetconfException(&quot;$deviceInfo: Failed to open SSH subsystem channel&quot;)</span>
+        }
+<span class="fc" id="L236">    }</span>
+
+    private fun setupHandler() {
+<span class="nc" id="L239">        val sessionListener: NetconfSessionListener = NetconfSessionListenerImpl(this)</span>
+<span class="nc" id="L240">        streamHandler = NetconfDeviceCommunicator(channel.invertedOut, channel.invertedIn, deviceInfo,</span>
+<span class="nc" id="L241">            sessionListener, replies)</span>
+
+<span class="nc" id="L243">        exchangeHelloMessage()</span>
+<span class="nc" id="L244">    }</span>
+
+    private fun exchangeHelloMessage() {
+<span class="nc" id="L247">        sessionId = &quot;-1&quot;</span>
+<span class="nc" id="L248">        val messageId = &quot;-1&quot;</span>
+
+<span class="nc" id="L250">        val serverHelloResponse = syncRpc(NetconfMessageUtils.createHelloString(capabilities), messageId)</span>
+<span class="nc" id="L251">        val sessionIDMatcher = NetconfMessageUtils.SESSION_ID_REGEX_PATTERN.matcher(serverHelloResponse)</span>
+
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (sessionIDMatcher.find()) {</span>
+<span class="nc" id="L254">            sessionId = sessionIDMatcher.group(1)</span>
+        } else {
+<span class="nc" id="L256">            throw NetconfException(&quot;$deviceInfo: Missing sessionId in server hello message: $serverHelloResponse&quot;)</span>
+        }
+
+<span class="nc" id="L259">        val capabilityMatcher = NetconfMessageUtils.CAPABILITY_REGEX_PATTERN.matcher(serverHelloResponse)</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        while (capabilityMatcher.find()) { //TODO: refactor to add unit test easily for device capability accumulation.</span>
+<span class="nc" id="L261">            deviceCapabilities.add(capabilityMatcher.group(1))</span>
+        }
+<span class="nc" id="L263">    }</span>
+
+    internal fun setStreamHandler(streamHandler: NetconfDeviceCommunicator) {
+<span class="fc" id="L266">        this.streamHandler = streamHandler</span>
+<span class="fc" id="L267">    }</span>
+
+    /**
+     * Add an error reply
+     * Used by {@link NetconfSessionListenerImpl}
+     */
+    internal fun addDeviceErrorReply(errReply: String) {
+<span class="nc" id="L274">        errorReplies.add(errReply)</span>
+<span class="nc" id="L275">    }</span>
+
+    /**
+     * Add a reply from the device
+     * Used by {@link NetconfSessionListenerImpl}
+     */
+    internal fun addDeviceReply(messageId: String, replyMsg: String) {
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        replies[messageId]?.complete(replyMsg)</span>
+<span class="nc" id="L283">    }</span>
+
+    /**
+     * Closes the session/channel/client
+     */
+    @Throws(IOException::class)
+    private fun close() {
+<span class="fc" id="L290">        session.close()</span>
+        // Closes the socket which should interrupt the streamHandler
+<span class="fc" id="L292">        channel.close()</span>
+<span class="fc" id="L293">        client.close()</span>
+<span class="fc" id="L294">    }</span>
+
+    /**
+     * Internal function for accessing replies for testing.
+     */
+<span class="fc" id="L299">    internal fun getReplies() = replies</span>
+
+    /**
+     * internal function for accessing errorReplies for testing.
+     */
+<span class="nc" id="L304">    internal fun getErrorReplies() = errorReplies</span>
+<span class="fc" id="L305">    internal fun clearErrorReplies() = errorReplies.clear()</span>
+<span class="fc" id="L306">    internal fun clearReplies() = replies.clear()</span>
+<span class="fc" id="L307">    internal fun setClient(client: SshClient) { this.client = client }</span>
+<span class="fc" id="L308">    internal fun setSession(session: ClientSession) { this.session = session }</span>
+<span class="fc" id="L309">    internal fun setChannel(channel: ClientChannel) { this.channel = channel }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

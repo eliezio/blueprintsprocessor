@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KafkaBasicAuthMessageProducerService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.message.service</a> &gt; <span class="el_source">KafkaBasicAuthMessageProducerService.kt</span></div><h1>KafkaBasicAuthMessageProducerService.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2019 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.message.service
+
+import org.apache.kafka.clients.producer.ProducerConfig.*
+import org.apache.kafka.common.serialization.StringSerializer
+import org.onap.ccsdk.cds.blueprintsprocessor.message.KafkaBasicAuthMessageProducerProperties
+import org.onap.ccsdk.cds.controllerblueprints.core.asJsonType
+import org.slf4j.LoggerFactory
+import org.springframework.kafka.core.DefaultKafkaProducerFactory
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.core.ProducerFactory
+import org.springframework.kafka.support.SendResult
+import org.springframework.util.concurrent.ListenableFutureCallback
+
+
+<span class="fc" id="L31">class KafkaBasicAuthMessageProducerService(</span>
+        private val messageProducerProperties: KafkaBasicAuthMessageProducerProperties)
+    : BlueprintMessageProducerService {
+
+<span class="fc" id="L35">    private val log = LoggerFactory.getLogger(KafkaBasicAuthMessageProducerService::class.java)!!</span>
+
+    private var kafkaTemplate: KafkaTemplate&lt;String, Any&gt;? = null
+
+    override suspend fun sendMessageNB(message: Any): Boolean {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        checkNotNull(messageProducerProperties.topic) { &quot;default topic is not configured&quot; }</span>
+<span class="fc" id="L41">        return sendMessage(messageProducerProperties.topic!!, message)</span>
+    }
+
+    override suspend fun sendMessageNB(topic: String, message: Any): Boolean {
+<span class="fc" id="L45">        val serializedMessage = when (message) {</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">            is String -&gt; {</span>
+<span class="fc" id="L47">                message</span>
+            }
+            else -&gt; {
+<span class="nc" id="L50">                message.asJsonType().toString()</span>
+            }
+        }
+<span class="fc" id="L53">        val future = messageTemplate().send(topic, serializedMessage)</span>
+
+<span class="fc" id="L55">        future.addCallback(object : ListenableFutureCallback&lt;SendResult&lt;String, Any&gt;&gt; {</span>
+            override fun onSuccess(result: SendResult&lt;String, Any&gt;) {
+<span class="nc" id="L57">                log.info(&quot;message sent successfully with offset=[${result.recordMetadata.offset()}]&quot;)</span>
+<span class="nc" id="L58">            }</span>
+
+            override fun onFailure(ex: Throwable) {
+<span class="nc" id="L61">                log.error(&quot;Unable to send message&quot;, ex)</span>
+<span class="nc" id="L62">            }</span>
+        })
+<span class="fc" id="L64">        return true</span>
+    }
+
+
+<span class="nc" id="L68">    private fun producerFactory(additionalConfig: Map&lt;String, Any&gt;? = null): ProducerFactory&lt;String, Any&gt; {</span>
+<span class="nc" id="L69">        log.info(&quot;Client Properties : $messageProducerProperties&quot;)</span>
+<span class="nc" id="L70">        val configProps = hashMapOf&lt;String, Any&gt;()</span>
+<span class="nc" id="L71">        configProps[BOOTSTRAP_SERVERS_CONFIG] = messageProducerProperties.bootstrapServers</span>
+<span class="nc" id="L72">        configProps[KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java</span>
+<span class="nc" id="L73">        configProps[VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (messageProducerProperties.clientId != null) {</span>
+<span class="nc" id="L75">            configProps[CLIENT_ID_CONFIG] = messageProducerProperties.clientId!!</span>
+        }
+        // TODO(&quot;Security Implementation based on type&quot;)
+
+        // Add additional Properties
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (additionalConfig != null) {</span>
+<span class="nc" id="L81">            configProps.putAll(additionalConfig)</span>
+        }
+<span class="nc" id="L83">        return DefaultKafkaProducerFactory(configProps)</span>
+    }
+
+<span class="fc" id="L86">    fun messageTemplate(additionalConfig: Map&lt;String, Any&gt;? = null): KafkaTemplate&lt;String, Any&gt; {</span>
+<span class="nc" id="L87">        log.info(&quot;Prepering templates&quot;)</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (kafkaTemplate == null) {</span>
+<span class="nc" id="L89">            kafkaTemplate = KafkaTemplate(producerFactory(additionalConfig))</span>
+        }
+<span class="nc" id="L91">        return kafkaTemplate!!</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

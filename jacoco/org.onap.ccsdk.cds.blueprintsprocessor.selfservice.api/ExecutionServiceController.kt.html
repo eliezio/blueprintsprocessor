@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExecutionServiceController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api</a> &gt; <span class="el_source">ExecutionServiceController.kt</span></div><h1>ExecutionServiceController.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ * Modifications Copyright © 2019 IBM.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api
+
+import io.swagger.annotations.ApiOperation
+import kotlinx.coroutines.runBlocking
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ACTION_MODE_ASYNC
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceInput
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceOutput
+import org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.utils.determineHttpStatusCode
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintException
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.http.codec.multipart.FilePart
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.*
+
+@RestController
+@RequestMapping(&quot;/api/v1/execution-service&quot;)
+<span class="fc" id="L37">open class ExecutionServiceController {</span>
+
+    @Autowired
+<span class="pc" id="L40">    lateinit var executionServiceHandler: ExecutionServiceHandler</span>
+
+    @RequestMapping(path = [&quot;/ping&quot;], method = [RequestMethod.GET], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @ResponseBody
+<span class="nc" id="L44">    fun ping(): String = runBlocking {</span>
+<span class="nc" id="L45">        &quot;Success&quot;</span>
+<span class="nc" id="L46">    }</span>
+
+    @PostMapping(path = [&quot;/upload&quot;], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @ApiOperation(value = &quot;Upload CBA&quot;, notes = &quot;Takes a File and load it in the runtime database&quot;)
+    @ResponseBody
+    @PreAuthorize(&quot;hasRole('USER')&quot;)
+<span class="fc" id="L52">    fun upload(@RequestPart(&quot;file&quot;) filePart: FilePart): String = runBlocking {</span>
+<span class="fc" id="L53">        executionServiceHandler.upload(filePart)</span>
+<span class="fc" id="L54">    }</span>
+
+    @DeleteMapping(&quot;/name/{name}/version/{version}&quot;)
+    @Throws(BluePrintException::class)
+    @PreAuthorize(&quot;hasRole('USER')&quot;)
+    fun deleteBlueprint(@PathVariable(value = &quot;name&quot;) name: String,
+<span class="nc" id="L60">                        @PathVariable(value = &quot;version&quot;) version: String) = runBlocking {</span>
+<span class="nc" id="L61">        executionServiceHandler.remove(name, version)</span>
+<span class="nc" id="L62">    }</span>
+
+    @RequestMapping(path = [&quot;/process&quot;], method = [RequestMethod.POST], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @ApiOperation(value = &quot;Resolve Resource Mappings&quot;,
+            notes = &quot;Takes the blueprint information and process as per the payload&quot;)
+    @ResponseBody
+    @PreAuthorize(&quot;hasRole('USER')&quot;)
+<span class="fc" id="L69">    fun process(@RequestBody executionServiceInput: ExecutionServiceInput): ResponseEntity&lt;ExecutionServiceOutput&gt; = runBlocking {</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (executionServiceInput.actionIdentifiers.mode == ACTION_MODE_ASYNC) {</span>
+<span class="nc" id="L71">            throw IllegalStateException(&quot;Can't process async request through the REST endpoint. Use gRPC for async processing.&quot;)</span>
+        }
+<span class="fc" id="L73">        val processResult = executionServiceHandler.doProcess(executionServiceInput)</span>
+<span class="fc" id="L74">        ResponseEntity(processResult, determineHttpStatusCode(processResult.status.code))</span>
+<span class="fc" id="L75">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

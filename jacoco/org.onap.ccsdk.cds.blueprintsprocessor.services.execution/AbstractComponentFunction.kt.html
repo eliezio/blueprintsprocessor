@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractComponentFunction.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.services.execution</a> &gt; <span class="el_source">AbstractComponentFunction.kt</span></div><h1>AbstractComponentFunction.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *  Modifications Copyright © 2019 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.services.execution
+
+
+import com.fasterxml.jackson.databind.JsonNode
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceInput
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.ExecutionServiceOutput
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.Status
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.StepData
+import org.onap.ccsdk.cds.controllerblueprints.common.api.EventType
+import org.onap.ccsdk.cds.controllerblueprints.core.*
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BlueprintFunctionNode
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintRuntimeService
+import org.slf4j.LoggerFactory
+
+/**
+ * AbstractComponentFunction
+ * @author Brinda Santh
+ */
+<span class="pc" id="L36">abstract class AbstractComponentFunction : BlueprintFunctionNode&lt;ExecutionServiceInput, ExecutionServiceOutput&gt; {</span>
+    @Transient
+<span class="fc" id="L38">    private val log = LoggerFactory.getLogger(AbstractComponentFunction::class.java)</span>
+
+<span class="pc" id="L40">    lateinit var executionServiceInput: ExecutionServiceInput</span>
+<span class="pc" id="L41">    var executionServiceOutput = ExecutionServiceOutput()</span>
+<span class="fc" id="L42">    lateinit var bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;</span>
+<span class="fc" id="L43">    lateinit var processId: String</span>
+<span class="fc" id="L44">    lateinit var workflowName: String</span>
+<span class="fc" id="L45">    lateinit var stepName: String</span>
+<span class="fc" id="L46">    lateinit var interfaceName: String</span>
+<span class="fc" id="L47">    lateinit var operationName: String</span>
+<span class="fc" id="L48">    lateinit var nodeTemplateName: String</span>
+<span class="fc" id="L49">    var operationInputs: MutableMap&lt;String, JsonNode&gt; = hashMapOf()</span>
+
+    override fun getName(): String {
+<span class="fc" id="L52">        return stepName</span>
+    }
+
+    override suspend fun prepareRequestNB(executionRequest: ExecutionServiceInput): ExecutionServiceInput {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        checkNotNull(bluePrintRuntimeService) { &quot;failed to prepare blueprint runtime&quot; }</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        checkNotNull(executionRequest.stepData) { &quot;failed to get step info&quot; }</span>
+
+        // Get the Step Name and Step Inputs
+<span class="fc" id="L60">        this.stepName = executionRequest.stepData!!.name</span>
+<span class="fc" id="L61">        this.operationInputs = executionRequest.stepData!!.properties</span>
+
+<span class="pc" id="L63">        checkNotEmpty(stepName) { &quot;failed to get step name from step data&quot; }</span>
+
+<span class="fc" id="L65">        this.executionServiceInput = executionRequest</span>
+
+<span class="fc" id="L67">        processId = executionRequest.commonHeader.requestId</span>
+<span class="pc bpc" id="L68" title="2 of 4 branches missed.">        check(processId.isNotEmpty()) { &quot;couldn't get process id for step($stepName)&quot; }</span>
+
+<span class="fc" id="L70">        workflowName = executionRequest.actionIdentifiers.actionName</span>
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">        check(workflowName.isNotEmpty()) { &quot;couldn't get action name for step($stepName)&quot; }</span>
+
+<span class="fc" id="L73">        log.info(&quot;preparing request id($processId) for workflow($workflowName) step($stepName)&quot;)</span>
+
+<span class="fc" id="L75">        nodeTemplateName = this.operationInputs.getAsString(BluePrintConstants.PROPERTY_CURRENT_NODE_TEMPLATE)</span>
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">        check(nodeTemplateName.isNotEmpty()) { &quot;couldn't get NodeTemplate name for step($stepName)&quot; }</span>
+
+<span class="fc" id="L78">        interfaceName = this.operationInputs.getAsString(BluePrintConstants.PROPERTY_CURRENT_INTERFACE)</span>
+<span class="pc bpc" id="L79" title="2 of 4 branches missed.">        check(interfaceName.isNotEmpty()) { &quot;couldn't get Interface name for step($stepName)&quot; }</span>
+
+<span class="fc" id="L81">        operationName = this.operationInputs.getAsString(BluePrintConstants.PROPERTY_CURRENT_OPERATION)</span>
+<span class="pc bpc" id="L82" title="2 of 4 branches missed.">        check(operationName.isNotEmpty()) { &quot;couldn't get Operation name for step($stepName)&quot; }</span>
+
+<span class="fc" id="L84">        val operationResolvedProperties = bluePrintRuntimeService</span>
+<span class="fc" id="L85">                .resolveNodeTemplateInterfaceOperationInputs(nodeTemplateName, interfaceName, operationName)</span>
+
+<span class="fc" id="L87">        this.operationInputs.putAll(operationResolvedProperties)</span>
+
+<span class="fc" id="L89">        return executionRequest</span>
+    }
+
+    override suspend fun prepareResponseNB(): ExecutionServiceOutput {
+<span class="fc" id="L93">        log.info(&quot;Preparing Response...&quot;)</span>
+<span class="fc" id="L94">        executionServiceOutput.commonHeader = executionServiceInput.commonHeader</span>
+<span class="fc" id="L95">        executionServiceOutput.actionIdentifiers = executionServiceInput.actionIdentifiers</span>
+<span class="fc" id="L96">        var status = Status()</span>
+<span class="fc" id="L97">        try {</span>
+            // Resolve the Output Expression
+<span class="fc" id="L99">            val stepOutputs = bluePrintRuntimeService</span>
+<span class="fc" id="L100">                    .resolveNodeTemplateInterfaceOperationOutputs(nodeTemplateName, interfaceName, operationName)</span>
+
+<span class="fc" id="L102">            val stepOutputData = StepData().apply {</span>
+<span class="fc" id="L103">                name = stepName</span>
+<span class="fc" id="L104">                properties = stepOutputs</span>
+<span class="fc" id="L105">            }</span>
+<span class="fc" id="L106">            executionServiceOutput.stepData = stepOutputData</span>
+            // Set the Default Step Status
+<span class="fc" id="L108">            status.eventType = EventType.EVENT_COMPONENT_EXECUTED.name</span>
+<span class="nc" id="L109">        } catch (e: Exception) {</span>
+<span class="nc" id="L110">            status.message = BluePrintConstants.STATUS_FAILURE</span>
+<span class="nc" id="L111">            status.eventType = EventType.EVENT_COMPONENT_FAILURE.name</span>
+        }
+<span class="fc" id="L113">        executionServiceOutput.status = status</span>
+<span class="fc" id="L114">        return this.executionServiceOutput</span>
+    }
+
+<span class="fc" id="L117">    override suspend fun applyNB(executionServiceInput: ExecutionServiceInput): ExecutionServiceOutput {</span>
+<span class="fc" id="L118">        try {</span>
+<span class="fc" id="L119">            prepareRequestNB(executionServiceInput)</span>
+<span class="fc" id="L120">            processNB(executionServiceInput)</span>
+<span class="fc" id="L121">        } catch (runtimeException: RuntimeException) {</span>
+<span class="fc" id="L122">            log.error(&quot;failed in ${getName()} : ${runtimeException.message}&quot;, runtimeException)</span>
+<span class="fc" id="L123">            recoverNB(runtimeException, executionServiceInput)</span>
+<span class="fc" id="L124">        }</span>
+<span class="fc" id="L125">        return prepareResponseNB()</span>
+    }
+
+    fun getOperationInput(key: String): JsonNode {
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        return operationInputs[key]</span>
+<span class="pc" id="L130">                ?: throw BluePrintProcessorException(&quot;couldn't get the operation input($key) value.&quot;)</span>
+    }
+
+    fun getOptionalOperationInput(key: String): JsonNode? {
+<span class="fc" id="L134">        return operationInputs[key]</span>
+    }
+
+    fun setAttribute(key: String, value: JsonNode) {
+<span class="fc" id="L138">        bluePrintRuntimeService.setNodeTemplateAttributeValue(nodeTemplateName, key, value)</span>
+<span class="fc" id="L139">    }</span>
+
+    fun addError(type: String, name: String, error: String) {
+<span class="fc" id="L142">        bluePrintRuntimeService.getBluePrintError().addError(type, name, error)</span>
+<span class="fc" id="L143">    }</span>
+
+    fun addError(error: String) {
+<span class="nc" id="L146">        bluePrintRuntimeService.getBluePrintError().addError(error)</span>
+<span class="nc" id="L147">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

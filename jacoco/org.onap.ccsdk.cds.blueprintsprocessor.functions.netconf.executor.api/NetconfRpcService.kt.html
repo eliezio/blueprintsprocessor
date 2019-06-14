@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetconfRpcService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api</a> &gt; <span class="el_source">NetconfRpcService.kt</span></div><h1>NetconfRpcService.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api
+
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.ModifyAction
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.NetconfDatastore
+
+interface NetconfRpcService {
+
+    /**
+     * Lock
+     *
+     * @param configTarget running or candidate, default candidate
+     * @return Device response
+     */
+<span class="nc" id="L29">    fun lock(configTarget: String = NetconfDatastore.CANDIDATE.datastore): DeviceResponse</span>
+
+    /**
+     * Get-config
+     *
+     * @param filter filter content, default empty
+     * @param configTarget running or candidate, default running
+     * @return Device response
+     */
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">    fun getConfig(filter: String = &quot;&quot;, configTarget: String = NetconfDatastore.RUNNING.datastore): DeviceResponse</span>
+
+    /**
+     * Delete config
+     *
+     * @param configTarget running or candidate, default candidate
+     * @return Device response
+     */
+<span class="nc" id="L46">    fun deleteConfig(configTarget: String = NetconfDatastore.CANDIDATE.datastore): DeviceResponse</span>
+
+    /**
+     * Edit-config
+     *
+     * @param messageContent edit config content.
+     * @param configTarget running or candidate, default candidate
+     * @param editDefaultOperation, default set to none. Valid values: merge, replace, create, delete, none
+     * @return Device response
+     */
+<span class="nc bnc" id="L56" title="All 2 branches missed.">    fun editConfig(messageContent: String, configTarget: String = NetconfDatastore.CANDIDATE.datastore,</span>
+<span class="nc" id="L57">                   editDefaultOperation: String = ModifyAction.NONE.action): DeviceResponse</span>
+
+    /**
+     * Invoke custom RPC as provided as input.
+     *
+     * Some use cases might required one to directly invoke a device
+     * specific RPC. The RPC must be correctly formatted.
+     *
+     * Ex: in order to rollback last submitted configuration
+     * for JUNOS devices, such RPC can be use:
+     * &lt;code&gt;
+     *  &amp;lt;rpc&gt;
+     *      &amp;lt;load-configuration rollback=&quot;1&quot;/&gt;
+     *  &amp;lt;/rpc&gt;
+     * &lt;/code&gt;
+     *
+     * @param rpc the rpc content.
+     */
+    fun invokeRpc(rpc: String): DeviceResponse
+
+    /**
+     * Validate
+     *
+     * @param configTarget running or candidate, default candidate
+     * @return Device response
+     */
+<span class="nc" id="L83">    fun validate(configTarget: String = NetconfDatastore.CANDIDATE.datastore): DeviceResponse</span>
+
+    /**
+     * Commit
+     *
+     * @param confirmed Perform a confirmed &lt;commit&gt; operation. If flag set to true,
+     * then it is expected to have a follow-up &lt;commit&gt; operation to confirm the request
+     * @param confirmTimeout Timeout period for confirmed commit, in seconds.
+     * @param persist Make the confirmed commit survive a session termination, and
+     * set a token on the ongoing confirmed commit.
+     * @param persistId Used to issue a follow-up confirmed commit or a confirming
+     * commit from any session, with the token from the previous &lt;commit&gt; operation.
+     * If unspecified, the confirm timeout defaults to 600 seconds.
+     * @return Device response
+     */
+<span class="pc bpc" id="L98" title="3 of 6 branches missed.">    fun commit(confirmed: Boolean = false, confirmTimeout: Int = 60, persist: String = &quot;&quot;,</span>
+<span class="pc" id="L99">               persistId: String = &quot;&quot;): DeviceResponse</span>
+
+    /**
+     * Cancels an ongoing confirmed commit.  If the &lt;persist-id&gt; parameter is not given,
+     * the &lt;cancel-commit&gt; operation MUST be issued on the same session that issued
+     * the confirmed commit.
+     *
+     * @param persistId Cancels a persistent confirmed commit.  The value MUST be equal
+     * to the value given in the &lt;persist&gt; parameter to the &lt;commit&gt; operation.
+     * If the value does not match, the operation fails with an &quot;invalid-value&quot; error.
+     */
+<span class="nc" id="L110">    fun cancelCommit(persistId: String = &quot;&quot;): DeviceResponse</span>
+
+    /**
+     * Unlock
+     *
+     * @param configTarget running or candidate, default candidate
+     * @return Device response
+     */
+<span class="nc" id="L118">    fun unLock(configTarget: String = NetconfDatastore.CANDIDATE.datastore): DeviceResponse</span>
+
+    /**
+     * Discard config
+     *
+     * @return Device response
+     */
+    fun discardConfig(): DeviceResponse
+
+    /**
+     * Close session
+     *
+     * @param force force closeSession
+     * @return Device response
+     */
+    fun closeSession(force: Boolean): DeviceResponse
+
+    /**
+     * Executes an RPC request to the netconf server.
+     *
+     * @param request the XML containing the RPC request for the server.
+     * @return Device response
+     */
+    fun asyncRpc(request: String, messageId: String): DeviceResponse
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

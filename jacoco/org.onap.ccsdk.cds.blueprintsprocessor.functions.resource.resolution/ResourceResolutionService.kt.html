@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResourceResolutionService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution</a> &gt; <span class="el_source">ResourceResolutionService.kt</span></div><h1>ResourceResolutionService.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *  Modifications Copyright © 2018-2019 IBM, Bell Canada
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution
+
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.db.ResourceResolutionResultService
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.ResourceAssignmentProcessor
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils.ResourceAssignmentUtils
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.checkNotEmpty
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintRuntimeService
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintTemplateService
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceDefinition
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.utils.BulkResourceSequencingUtils
+import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationContext
+import org.springframework.stereotype.Service
+
+interface ResourceResolutionService {
+
+    fun registeredResourceSources(): List&lt;String&gt;
+
+    suspend fun resolveFromDatabase(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, artifactTemplate: String,
+                                    resolutionKey: String): String
+
+    suspend fun resolveResources(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, nodeTemplateName: String,
+                                 artifactNames: List&lt;String&gt;, properties: Map&lt;String, Any&gt;): MutableMap&lt;String, String&gt;
+
+    suspend fun resolveResources(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, nodeTemplateName: String,
+                                 artifactPrefix: String, properties: Map&lt;String, Any&gt;): String
+
+    suspend fun resolveResources(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, nodeTemplateName: String,
+                                 artifactMapping: String, artifactTemplate: String?): String
+
+    suspend fun resolveResourceAssignments(blueprintRuntimeService: BluePrintRuntimeService&lt;*&gt;,
+                                           resourceDefinitions: MutableMap&lt;String, ResourceDefinition&gt;,
+                                           resourceAssignments: MutableList&lt;ResourceAssignment&gt;,
+                                           identifierName: String)
+}
+
+@Service(ResourceResolutionConstants.SERVICE_RESOURCE_RESOLUTION)
+<span class="fc" id="L61">open class ResourceResolutionServiceImpl(private var applicationContext: ApplicationContext,</span>
+                                         private var resolutionResultService: ResourceResolutionResultService) :
+        ResourceResolutionService {
+
+<span class="fc" id="L65">    private val log = LoggerFactory.getLogger(ResourceResolutionService::class.java)</span>
+
+    override fun registeredResourceSources(): List&lt;String&gt; {
+<span class="fc" id="L68">        return applicationContext.getBeanNamesForType(ResourceAssignmentProcessor::class.java)</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                .filter { it.startsWith(ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR) }</span>
+<span class="fc" id="L70">                .map { it.substringAfter(ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR) }</span>
+    }
+
+    override suspend fun resolveFromDatabase(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;,
+                                             artifactTemplate: String,
+                                             resolutionKey: String): String {
+<span class="nc" id="L76">        return resolutionResultService.read(bluePrintRuntimeService, artifactTemplate, resolutionKey)</span>
+    }
+
+    override suspend fun resolveResources(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, nodeTemplateName: String,
+                                          artifactNames: List&lt;String&gt;, properties: Map&lt;String, Any&gt;): MutableMap&lt;String, String&gt; {
+
+<span class="fc" id="L82">        val resolvedParams: MutableMap&lt;String, String&gt; = hashMapOf()</span>
+<span class="fc" id="L83">        artifactNames.forEach { artifactName -&gt;</span>
+<span class="fc" id="L84">            val resolvedContent = resolveResources(bluePrintRuntimeService, nodeTemplateName,</span>
+<span class="fc" id="L85">                    artifactName, properties)</span>
+<span class="fc" id="L86">            resolvedParams[artifactName] = resolvedContent</span>
+<span class="fc" id="L87">        }</span>
+<span class="fc" id="L88">        return resolvedParams</span>
+    }
+
+    override suspend fun resolveResources(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, nodeTemplateName: String,
+                                          artifactPrefix: String, properties: Map&lt;String, Any&gt;): String {
+
+        // Velocity Artifact Definition Name
+<span class="fc" id="L95">        val artifactTemplate = &quot;$artifactPrefix-template&quot;</span>
+        // Resource Assignment Artifact Definition Name
+<span class="fc" id="L97">        val artifactMapping = &quot;$artifactPrefix-mapping&quot;</span>
+
+<span class="fc" id="L99">        val result = resolveResources(bluePrintRuntimeService, nodeTemplateName,</span>
+<span class="fc" id="L100">                artifactMapping, artifactTemplate)</span>
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (properties.containsKey(ResourceResolutionConstants.RESOURCE_RESOLUTION_INPUT_STORE_RESULT)</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                &amp;&amp; properties[ResourceResolutionConstants.RESOURCE_RESOLUTION_INPUT_STORE_RESULT] as Boolean) {</span>
+<span class="nc" id="L104">            resolutionResultService.write(properties, result, bluePrintRuntimeService, artifactPrefix)</span>
+<span class="nc" id="L105">            log.info(&quot;resolution saved into database successfully : ($properties)&quot;)</span>
+        }
+
+<span class="fc" id="L108">        return result</span>
+    }
+
+
+    override suspend fun resolveResources(bluePrintRuntimeService: BluePrintRuntimeService&lt;*&gt;, nodeTemplateName: String,
+                                          artifactMapping: String, artifactTemplate: String?): String {
+
+<span class="fc" id="L115">        val resolvedContent: String</span>
+<span class="fc" id="L116">        log.info(&quot;Resolving resource for template artifact($artifactTemplate) with resource assignment artifact($artifactMapping)&quot;)</span>
+
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        val identifierName = artifactTemplate ?: &quot;no-template&quot;</span>
+
+<span class="fc" id="L120">        val resourceAssignmentContent =</span>
+<span class="fc" id="L121">                bluePrintRuntimeService.resolveNodeTemplateArtifact(nodeTemplateName, artifactMapping)</span>
+
+<span class="fc" id="L123">        val resourceAssignments: MutableList&lt;ResourceAssignment&gt; =</span>
+<span class="pc bpc" id="L124" title="2 of 4 branches missed.">                JacksonUtils.getListFromJson(resourceAssignmentContent, ResourceAssignment::class.java)</span>
+                        as? MutableList&lt;ResourceAssignment&gt;
+<span class="nc" id="L126">                        ?: throw BluePrintProcessorException(&quot;couldn't get Dictionary Definitions&quot;)</span>
+
+        // Get the Resource Dictionary Name
+<span class="fc" id="L129">        val resourceDefinitions: MutableMap&lt;String, ResourceDefinition&gt; = ResourceAssignmentUtils</span>
+<span class="fc" id="L130">                .resourceDefinitions(bluePrintRuntimeService.bluePrintContext().rootPath)</span>
+
+        // Resolve resources
+<span class="fc" id="L133">        resolveResourceAssignments(bluePrintRuntimeService, resourceDefinitions, resourceAssignments, identifierName)</span>
+
+<span class="fc" id="L135">        val resolvedParamJsonContent =</span>
+<span class="fc" id="L136">                ResourceAssignmentUtils.generateResourceDataForAssignments(resourceAssignments.toList())</span>
+
+        // Check Template is there
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (artifactTemplate != null) {</span>
+<span class="fc" id="L140">            val blueprintTemplateService = BluePrintTemplateService()</span>
+<span class="fc" id="L141">            resolvedContent = blueprintTemplateService.generateContent(bluePrintRuntimeService, nodeTemplateName,</span>
+<span class="fc" id="L142">                    artifactTemplate, resolvedParamJsonContent)</span>
+
+        } else {
+<span class="pc" id="L145">            resolvedContent = resolvedParamJsonContent</span>
+        }
+
+<span class="fc" id="L148">        return resolvedContent</span>
+    }
+
+    /**
+     * Iterate the Batch, get the Resource Assignment, dictionary Name, Look for the Resource definition for the
+     * name, then get the type of the Resource Definition, Get the instance for the Resource Type and process the
+     * request.
+     */
+    override suspend fun resolveResourceAssignments(blueprintRuntimeService: BluePrintRuntimeService&lt;*&gt;,
+                                                    resourceDefinitions: MutableMap&lt;String, ResourceDefinition&gt;,
+                                                    resourceAssignments: MutableList&lt;ResourceAssignment&gt;,
+                                                    identifierName: String) {
+
+<span class="fc" id="L161">        val bulkSequenced = BulkResourceSequencingUtils.process(resourceAssignments)</span>
+<span class="fc" id="L162">        val resourceAssignmentRuntimeService =</span>
+<span class="fc" id="L163">                ResourceAssignmentUtils.transformToRARuntimeService(blueprintRuntimeService, identifierName)</span>
+
+<span class="fc" id="L165">        coroutineScope {</span>
+<span class="fc" id="L166">            bulkSequenced.forEach { batchResourceAssignments -&gt;</span>
+                // Execute Non Dependent Assignments in parallel ( ie asynchronously )
+<span class="pc bpc" id="L168" title="1 of 6 branches missed.">                val deferred = batchResourceAssignments.filter { it.name != &quot;*&quot; &amp;&amp; it.name != &quot;start&quot; }</span>
+<span class="fc" id="L169">                        .map { resourceAssignment -&gt;</span>
+<span class="pc bnc" id="L170" title="All 2 branches missed.">                            async {</span>
+<span class="fc" id="L171">                                val dictionaryName = resourceAssignment.dictionaryName</span>
+<span class="fc" id="L172">                                val dictionarySource = resourceAssignment.dictionarySource</span>
+                                /**
+                                 * Get the Processor name
+                                 */
+<span class="fc" id="L176">                                val processorName = processorName(dictionaryName!!, dictionarySource!!, resourceDefinitions)</span>
+
+<span class="fc" id="L178">                                val resourceAssignmentProcessor =</span>
+<span class="pc bpc" id="L179" title="2 of 4 branches missed.">                                        applicationContext.getBean(processorName) as? ResourceAssignmentProcessor</span>
+<span class="nc" id="L180">                                                ?: throw BluePrintProcessorException(&quot;failed to get resource processor ($processorName) &quot; +</span>
+<span class="nc" id="L181">                                                        &quot;for resource assignment(${resourceAssignment.name})&quot;)</span>
+<span class="fc" id="L182">                                try {</span>
+                                    // Set BluePrint Runtime Service
+<span class="fc" id="L184">                                    resourceAssignmentProcessor.raRuntimeService = resourceAssignmentRuntimeService</span>
+                                    // Set Resource Dictionaries
+<span class="fc" id="L186">                                    resourceAssignmentProcessor.resourceDictionaries = resourceDefinitions</span>
+                                    // Invoke Apply Method
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                                    resourceAssignmentProcessor.applyNB(resourceAssignment)</span>
+                                    // Set errors from RA
+<span class="fc" id="L190">                                    blueprintRuntimeService.setBluePrintError(resourceAssignmentRuntimeService.getBluePrintError())</span>
+<span class="nc" id="L191">                                } catch (e: RuntimeException) {</span>
+<span class="nc" id="L192">                                    throw BluePrintProcessorException(e)</span>
+                                }
+<span class="fc" id="L194">                            }</span>
+                        }
+<span class="fc" id="L196">                log.debug(&quot;Resolving (${deferred.size})resources parallel.&quot;)</span>
+<span class="fc" id="L197">                deferred.awaitAll()</span>
+<span class="fc" id="L198">            }</span>
+<span class="fc" id="L199">        }</span>
+
+    }
+
+
+    /**
+     * If the Source instance is &quot;input&quot;, then it is not mandatory to have source Resource Definition, So it can
+     *  derive the default input processor.
+     */
+    private fun processorName(dictionaryName: String, dictionarySource: String,
+                              resourceDefinitions: MutableMap&lt;String, ResourceDefinition&gt;): String {
+<span class="pc bpc" id="L210" title="1 of 3 branches missed.">        val processorName: String = when (dictionarySource) {</span>
+            &quot;input&quot; -&gt; {
+<span class="fc" id="L212">                &quot;${ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-input&quot;</span>
+            }
+            &quot;default&quot; -&gt; {
+<span class="nc" id="L215">                &quot;${ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-default&quot;</span>
+            }
+            else -&gt; {
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">                val resourceDefinition = resourceDefinitions[dictionaryName]</span>
+<span class="nc" id="L219">                        ?: throw BluePrintProcessorException(&quot;couldn't get resource dictionary definition for $dictionaryName&quot;)</span>
+
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">                val resourceSource = resourceDefinition.sources[dictionarySource]</span>
+<span class="nc" id="L222">                        ?: throw BluePrintProcessorException(&quot;couldn't get resource definition $dictionaryName source($dictionarySource)&quot;)</span>
+
+<span class="fc" id="L224">                ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR.plus(resourceSource.type)</span>
+            }
+        }
+<span class="fc" id="L227">        checkNotEmpty(processorName) {</span>
+<span class="nc" id="L228">            &quot;couldn't get processor name for resource dictionary definition($dictionaryName) source($dictionarySource)&quot;</span>
+        }
+
+<span class="fc" id="L231">        return processorName</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BlueprintProcessorModelContent.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.db.primary.domain</a> &gt; <span class="el_source">BlueprintProcessorModelContent.kt</span></div><h1>BlueprintProcessorModelContent.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2019 Bell Canada
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.db.primary.domain
+
+import com.fasterxml.jackson.annotation.JsonFormat
+import io.swagger.annotations.ApiModelProperty
+import java.io.Serializable
+import java.util.Date
+import java.util.Objects
+import javax.persistence.Column
+import javax.persistence.Entity
+import javax.persistence.EntityListeners
+import javax.persistence.Id
+import javax.persistence.JoinColumn
+import javax.persistence.Lob
+import javax.persistence.OneToOne
+import javax.persistence.Table
+import javax.persistence.Temporal
+import javax.persistence.TemporalType
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+
+@EntityListeners(AuditingEntityListener::class)
+@Entity
+@Table(name = &quot;BLUEPRINT_CONTENT_RUNTIME&quot;)
+<span class="fc" id="L40">class BlueprintProcessorModelContent : Serializable {</span>
+
+    @Id
+    @Column(name = &quot;blueprint_content_runtime_id&quot;)
+<span class="pc" id="L44">    var id: String? = null</span>
+
+    @Column(name = &quot;name&quot;, nullable = false)
+    @ApiModelProperty(required = true)
+<span class="pc" id="L48">    var name: String? = null</span>
+
+    @Column(name = &quot;content_type&quot;, nullable = false)
+    @ApiModelProperty(required = true)
+<span class="pc" id="L52">    var contentType: String? = null</span>
+
+    @OneToOne
+    @JoinColumn(name = &quot;blueprint_runtime_id&quot;)
+<span class="pc" id="L56">    var blueprintModel: BlueprintProcessorModel? = null</span>
+
+    @Lob
+    @Column(name = &quot;description&quot;)
+<span class="pc" id="L60">    var description: String? = null</span>
+
+    @Lob
+    @Column(name = &quot;content&quot;, nullable = false)
+    @ApiModelProperty(required = true)
+<span class="fc" id="L65">    var content: ByteArray? = null</span>
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = &quot;yyyy-MM-dd'T'HH:mm:ss.SSS'Z'&quot;)
+    @LastModifiedDate
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = &quot;updated_date&quot;)
+<span class="pc" id="L71">    var creationDate = Date()</span>
+
+    override fun toString(): String {
+<span class="nc" id="L74">        return &quot;[&quot; + &quot;id = &quot; + id +</span>
+<span class="nc" id="L75">                &quot;, name = &quot; + name +</span>
+<span class="nc" id="L76">                &quot;, contentType = &quot; + contentType +</span>
+                &quot;]&quot;
+    }
+
+    override fun equals(other: Any?): Boolean {
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (other === this) {</span>
+<span class="nc" id="L83">            return true</span>
+        }
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (other !is BlueprintProcessorModelContent) {</span>
+<span class="nc" id="L86">            return false</span>
+        }
+<span class="nc" id="L88">        val blueprintModelContent = other as BlueprintProcessorModelContent?</span>
+        return (id == blueprintModelContent!!.id &amp;&amp; name == blueprintModelContent.name
+<span class="nc bnc" id="L90" title="All 6 branches missed.">                &amp;&amp; contentType == blueprintModelContent.contentType)</span>
+    }
+
+    override fun hashCode(): Int {
+<span class="nc" id="L94">        return Objects.hash(id, name, contentType)</span>
+    }
+
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BasicAuthSshClientService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.ssh.service</a> &gt; <span class="el_source">BasicAuthSshClientService.kt</span></div><h1>BasicAuthSshClientService.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2019 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.ssh.service
+
+import org.apache.sshd.client.SshClient
+import org.apache.sshd.client.channel.ChannelExec
+import org.apache.sshd.client.channel.ClientChannel
+import org.apache.sshd.client.channel.ClientChannelEvent
+import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier
+import org.apache.sshd.client.session.ClientSession
+import org.onap.ccsdk.cds.blueprintsprocessor.ssh.BasicAuthSshClientProperties
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.slf4j.LoggerFactory
+import java.io.ByteArrayOutputStream
+import java.util.*
+
+
+<span class="pc" id="L32">open class BasicAuthSshClientService(private val basicAuthSshClientProperties: BasicAuthSshClientProperties)</span>
+    : BlueprintSshClientService {
+
+<span class="fc" id="L35">    private val log = LoggerFactory.getLogger(BasicAuthSshClientService::class.java)!!</span>
+
+    private lateinit var sshClient: SshClient
+    private lateinit var clientSession: ClientSession
+<span class="nc" id="L39">    var channel: ChannelExec? = null</span>
+
+    override suspend fun startSessionNB(): ClientSession {
+<span class="fc" id="L42">        sshClient = SshClient.setUpDefaultClient()</span>
+<span class="fc" id="L43">        sshClient.serverKeyVerifier = AcceptAllServerKeyVerifier.INSTANCE</span>
+<span class="fc" id="L44">        sshClient.start()</span>
+<span class="fc" id="L45">        log.debug(&quot;SSH Client Service started successfully&quot;)</span>
+<span class="fc" id="L46">        clientSession = sshClient.connect(basicAuthSshClientProperties.username, basicAuthSshClientProperties.host,</span>
+<span class="fc" id="L47">                basicAuthSshClientProperties.port)</span>
+<span class="fc" id="L48">                .verify(basicAuthSshClientProperties.connectionTimeOut)</span>
+                .session
+
+<span class="fc" id="L51">        clientSession.addPasswordIdentity(basicAuthSshClientProperties.password)</span>
+<span class="fc" id="L52">        clientSession.auth().verify(basicAuthSshClientProperties.connectionTimeOut)</span>
+<span class="fc" id="L53">        log.info(&quot;SSH client session($clientSession) created&quot;)</span>
+<span class="fc" id="L54">        return clientSession</span>
+    }
+
+    override suspend fun executeCommandsNB(commands: List&lt;String&gt;, timeOut: Long): String {
+<span class="fc" id="L58">        val buffer = StringBuffer()</span>
+<span class="fc" id="L59">        try {</span>
+<span class="fc" id="L60">            commands.forEach { command -&gt;</span>
+<span class="fc" id="L61">                buffer.append(&quot;\nCommand : $command&quot;)</span>
+<span class="fc" id="L62">                buffer.append(&quot;\n&quot; + executeCommandNB(command, timeOut))</span>
+<span class="fc" id="L63">            }</span>
+<span class="nc" id="L64">        } catch (e: Exception) {</span>
+<span class="nc" id="L65">            throw BluePrintProcessorException(&quot;Failed to execute commands, below the output : $buffer&quot;)</span>
+        }
+<span class="fc" id="L67">        return buffer.toString()</span>
+    }
+
+    override suspend fun executeCommandNB(command: String, timeOut: Long): String {
+<span class="fc" id="L71">        log.debug(&quot;Executing host($clientSession) command($command)&quot;)</span>
+
+<span class="fc" id="L73">        channel = clientSession.createExecChannel(command)</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        checkNotNull(channel) { &quot;failed to create Channel for the command : $command&quot; }</span>
+
+        //TODO(&quot;Convert to streaming &quot;)
+<span class="fc" id="L77">        val outputStream = ByteArrayOutputStream()</span>
+<span class="fc" id="L78">        channel!!.out = outputStream</span>
+<span class="fc" id="L79">        channel!!.err = outputStream</span>
+<span class="fc" id="L80">        channel!!.open().await()</span>
+<span class="fc" id="L81">        val waitMask = channel!!.waitFor(Collections.unmodifiableSet(EnumSet.of(ClientChannelEvent.CLOSED)), timeOut)</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (waitMask.contains(ClientChannelEvent.TIMEOUT)) {</span>
+<span class="nc" id="L83">            throw BluePrintProcessorException(&quot;Failed to retrieve command result in time: $command&quot;)</span>
+        }
+<span class="fc" id="L85">        val exitStatus = channel!!.exitStatus</span>
+<span class="fc" id="L86">        ClientChannel.validateCommandExitStatusCode(command, exitStatus!!)</span>
+<span class="fc" id="L87">        return outputStream.toString()</span>
+    }
+
+    override suspend fun closeSessionNB() {
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (channel != null)</span>
+<span class="fc" id="L92">            channel!!.close()</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (sshClient.isStarted) {</span>
+<span class="fc" id="L94">            sshClient.stop()</span>
+        }
+<span class="fc" id="L96">        log.debug(&quot;SSH Client Service stopped successfully&quot;)</span>
+<span class="fc" id="L97">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

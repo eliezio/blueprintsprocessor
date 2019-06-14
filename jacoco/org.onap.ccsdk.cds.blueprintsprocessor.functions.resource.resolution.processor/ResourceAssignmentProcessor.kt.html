@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResourceAssignmentProcessor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor</a> &gt; <span class="el_source">ResourceAssignmentProcessor.kt</span></div><h1>ResourceAssignmentProcessor.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2018 IBM.
+ *
+ *  Modifications Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor
+
+import com.fasterxml.jackson.databind.JsonNode
+import org.apache.commons.collections.MapUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceAssignmentRuntimeService
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils.ResourceAssignmentUtils
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintConstants
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintException
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.asJsonNode
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BlueprintFunctionNode
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintVelocityTemplateService
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceDefinition
+import org.slf4j.LoggerFactory
+import java.util.*
+
+<span class="pc" id="L36">abstract class ResourceAssignmentProcessor : BlueprintFunctionNode&lt;ResourceAssignment, Boolean&gt; {</span>
+
+<span class="fc" id="L38">    private val log = LoggerFactory.getLogger(ResourceAssignmentProcessor::class.java)</span>
+
+<span class="fc" id="L40">    lateinit var raRuntimeService: ResourceAssignmentRuntimeService</span>
+<span class="fc" id="L41">    lateinit var resourceDictionaries: MutableMap&lt;String, ResourceDefinition&gt;</span>
+
+<span class="pc" id="L43">    var scriptPropertyInstances: MutableMap&lt;String, Any&gt; = hashMapOf()</span>
+<span class="pc" id="L44">    lateinit var scriptType: String</span>
+
+    /**
+     * This will be called from the scripts to serve instance from runtime to scripts.
+     */
+    open fun &lt;T&gt; scriptPropertyInstanceType(name: String): T {
+<span class="nc bnc" id="L50" title="All 4 branches missed.">        return scriptPropertyInstances as? T</span>
+<span class="nc" id="L51">                ?: throw BluePrintProcessorException(&quot;couldn't get script property instance ($name)&quot;)</span>
+    }
+
+    open fun getFromInput(resourceAssignment: ResourceAssignment): JsonNode? {
+<span class="fc" id="L55">        var value: JsonNode? = null</span>
+<span class="fc" id="L56">        try {</span>
+<span class="fc" id="L57">            value = raRuntimeService.getInputValue(resourceAssignment.name)</span>
+<span class="fc" id="L58">            ResourceAssignmentUtils.setResourceDataValue(resourceAssignment, raRuntimeService, value)</span>
+<span class="fc" id="L59">        } catch (e: BluePrintProcessorException) {</span>
+            // NoOp - couldn't find value from input
+        }
+<span class="fc" id="L62">        return value</span>
+    }
+
+    open fun resourceDefinition(name: String): ResourceDefinition {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        return resourceDictionaries[name]</span>
+<span class="nc" id="L67">                ?: throw BluePrintProcessorException(&quot;couldn't get resource definition for ($name)&quot;)</span>
+    }
+
+    open fun resolveInputKeyMappingVariables(inputKeyMapping: Map&lt;String, String&gt;): Map&lt;String, JsonNode&gt; {
+<span class="nc" id="L71">        val resolvedInputKeyMapping = HashMap&lt;String, JsonNode&gt;()</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (MapUtils.isNotEmpty(inputKeyMapping)) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            for ((key, value) in inputKeyMapping) {</span>
+<span class="nc" id="L74">                val resultValue = raRuntimeService.getResolutionStore(value)</span>
+<span class="nc" id="L75">                resolvedInputKeyMapping[key] = resultValue</span>
+            }
+        }
+<span class="nc" id="L78">        return resolvedInputKeyMapping</span>
+    }
+
+    open suspend fun resolveFromInputKeyMapping(valueToResolve: String, keyMapping: MutableMap&lt;String, JsonNode&gt;):
+            String {
+<span class="fc bfc" id="L83" title="All 6 branches covered.">        if (valueToResolve.isEmpty() || !valueToResolve.contains(&quot;$&quot;)) {</span>
+<span class="fc" id="L84">            return valueToResolve</span>
+        }
+        //TODO(&quot;Optimize to JSON Node directly without velocity&quot;).asJsonNode().toString()
+<span class="fc" id="L87">        return BluePrintVelocityTemplateService.generateContent(valueToResolve, keyMapping.asJsonNode().toString())</span>
+    }
+
+    final override suspend fun applyNB(resourceAssignment: ResourceAssignment): Boolean {
+<span class="fc" id="L91">        try {</span>
+<span class="fc" id="L92">            processNB(resourceAssignment)</span>
+<span class="fc" id="L93">        } catch (runtimeException: RuntimeException) {</span>
+<span class="fc" id="L94">            log.error(&quot;failed in ${getName()} : ${runtimeException.message}&quot;, runtimeException)</span>
+<span class="fc" id="L95">            recoverNB(runtimeException, resourceAssignment)</span>
+<span class="fc" id="L96">        }</span>
+<span class="fc" id="L97">        return true</span>
+    }
+
+    suspend fun executeScript(resourceAssignment: ResourceAssignment) {
+<span class="pc bpc" id="L101" title="2 of 4 branches missed.">        return when (scriptType) {</span>
+            BluePrintConstants.SCRIPT_JYTHON -&gt; {
+<span class="fc" id="L103">                executeScriptBlocking(resourceAssignment)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L106">                executeScriptNB(resourceAssignment)</span>
+            }
+        }
+    }
+
+    private suspend fun executeScriptNB(resourceAssignment: ResourceAssignment) {
+<span class="nc" id="L112">        try {</span>
+<span class="nc" id="L113">            processNB(resourceAssignment)</span>
+<span class="nc" id="L114">        } catch (runtimeException: RuntimeException) {</span>
+<span class="nc" id="L115">            log.error(&quot;failed in ${getName()} : ${runtimeException.message}&quot;, runtimeException)</span>
+<span class="nc" id="L116">            recoverNB(runtimeException, resourceAssignment)</span>
+<span class="nc" id="L117">        }</span>
+<span class="nc" id="L118">    }</span>
+
+    private fun executeScriptBlocking(resourceAssignment: ResourceAssignment) {
+<span class="fc" id="L121">        try {</span>
+<span class="fc" id="L122">            process(resourceAssignment)</span>
+<span class="nc" id="L123">        } catch (runtimeException: RuntimeException) {</span>
+<span class="nc" id="L124">            log.error(&quot;failed in ${getName()} : ${runtimeException.message}&quot;, runtimeException)</span>
+<span class="nc" id="L125">            recover(runtimeException, resourceAssignment)</span>
+        }
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * If Jython Script, Override Blocking methods(process() and recover())
+     * If Kotlin or Internal Scripts, Override non blocking methods ( processNB() and recoverNB()), so default
+     * blocking
+     * methods will have default implementation,
+     *
+     * Always applyNB() method will be invoked, apply() won't be called from parent
+     */
+
+    final override fun apply(resourceAssignment: ResourceAssignment): Boolean {
+<span class="nc" id="L139">        throw BluePrintException(&quot;Not Implemented, use applyNB method&quot;)</span>
+    }
+
+    final override fun prepareRequest(resourceAssignment: ResourceAssignment): ResourceAssignment {
+<span class="nc" id="L143">        throw BluePrintException(&quot;Not Implemented required&quot;)</span>
+    }
+
+    final override fun prepareResponse(): Boolean {
+<span class="nc" id="L147">        throw BluePrintException(&quot;Not Implemented required&quot;)</span>
+    }
+
+    final override suspend fun prepareRequestNB(resourceAssignment: ResourceAssignment): ResourceAssignment {
+<span class="nc" id="L151">        throw BluePrintException(&quot;Not Implemented required&quot;)</span>
+    }
+
+    final override suspend fun prepareResponseNB(): Boolean {
+<span class="nc" id="L155">        throw BluePrintException(&quot;Not Implemented required&quot;)</span>
+    }
+
+    override fun process(resourceAssignment: ResourceAssignment) {
+<span class="nc" id="L159">        throw BluePrintException(&quot;Not Implemented, child class will implement this&quot;)</span>
+    }
+
+    override fun recover(runtimeException: RuntimeException, resourceAssignment: ResourceAssignment) {
+<span class="nc" id="L163">        throw BluePrintException(&quot;Not Implemented, child class will implement this&quot;)</span>
+    }
+
+    fun addError(type: String, name: String, error: String) {
+<span class="nc" id="L167">        raRuntimeService.getBluePrintError().addError(type, name, error)</span>
+<span class="nc" id="L168">    }</span>
+
+    fun addError(error: String) {
+<span class="nc" id="L171">        raRuntimeService.getBluePrintError().addError(error)</span>
+<span class="nc" id="L172">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

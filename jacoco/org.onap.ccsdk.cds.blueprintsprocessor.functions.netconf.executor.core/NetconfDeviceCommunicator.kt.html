@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetconfDeviceCommunicator.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.core</a> &gt; <span class="el_source">NetconfDeviceCommunicator.kt</span></div><h1>NetconfDeviceCommunicator.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.core
+
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.DeviceInfo
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfReceivedEvent
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfSessionListener
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.NetconfMessageUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils.RpcMessageUtils
+import org.slf4j.LoggerFactory
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.OutputStream
+import java.io.OutputStreamWriter
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+
+<span class="fc" id="L35">class NetconfDeviceCommunicator(private var inputStream: InputStream,</span>
+                                private var out: OutputStream,
+                                private val deviceInfo: DeviceInfo,
+                                private val sessionListener: NetconfSessionListener,
+<span class="fc" id="L39">                                private var replies: MutableMap&lt;String, CompletableFuture&lt;String&gt;&gt;) : Thread() {</span>
+
+<span class="fc" id="L41">    private val log = LoggerFactory.getLogger(NetconfDeviceCommunicator::class.java)</span>
+<span class="fc" id="L42">    private var state = NetconfMessageState.NO_MATCHING_PATTERN</span>
+
+    init {
+<span class="fc" id="L45">        start()</span>
+    }
+
+    override fun run() {
+<span class="fc" id="L49">        var bufferReader: BufferedReader? = null</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        while (bufferReader == null) {</span>
+<span class="fc" id="L51">            bufferReader = BufferedReader(InputStreamReader(inputStream, StandardCharsets.UTF_8))</span>
+        }
+
+<span class="fc" id="L54">        try {</span>
+<span class="fc" id="L55">            var socketClosed = false</span>
+<span class="fc" id="L56">            val deviceReplyBuilder = StringBuilder()</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            while (!socketClosed) {</span>
+<span class="fc" id="L58">                val cInt = bufferReader.read()</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                if (cInt == -1) {</span>
+<span class="fc" id="L60">                    log.debug(&quot;$deviceInfo: Received end of stream, closing socket.&quot;)</span>
+<span class="fc" id="L61">                    socketClosed = true</span>
+                }
+<span class="fc" id="L63">                val c = cInt.toChar()</span>
+<span class="fc" id="L64">                state = state.evaluateChar(c)</span>
+<span class="fc" id="L65">                deviceReplyBuilder.append(c)</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (state === NetconfMessageState.END_PATTERN) {</span>
+<span class="fc" id="L67">                    var deviceReply = deviceReplyBuilder.toString()</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                    if (deviceReply == RpcMessageUtils.END_PATTERN) {</span>
+<span class="fc" id="L69">                        socketClosed = true</span>
+<span class="fc" id="L70">                        bufferReader.close()</span>
+<span class="fc" id="L71">                        sessionListener.accept(NetconfReceivedEvent(</span>
+<span class="fc" id="L72">                            NetconfReceivedEvent.Type.DEVICE_UNREGISTERED,</span>
+<span class="fc" id="L73">                            deviceInfo = deviceInfo))</span>
+                    } else {
+<span class="fc" id="L75">                        deviceReply = deviceReply.replace(RpcMessageUtils.END_PATTERN, &quot;&quot;)</span>
+<span class="fc" id="L76">                        receivedMessage(deviceReply)</span>
+<span class="fc" id="L77">                        deviceReplyBuilder.setLength(0)</span>
+<span class="fc" id="L78">                    }</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                } else if (state === NetconfMessageState.END_CHUNKED_PATTERN) {</span>
+<span class="fc" id="L80">                    var deviceReply = deviceReplyBuilder.toString()</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                    if (!NetconfMessageUtils.validateChunkedFraming(deviceReply)) {</span>
+<span class="fc" id="L82">                        log.debug(&quot;$deviceInfo: Received badly framed message $deviceReply&quot;)</span>
+<span class="fc" id="L83">                        socketClosed = true</span>
+<span class="fc" id="L84">                        sessionListener.accept(NetconfReceivedEvent(</span>
+<span class="fc" id="L85">                            NetconfReceivedEvent.Type.DEVICE_ERROR,</span>
+<span class="fc" id="L86">                            deviceInfo = deviceInfo))</span>
+                    } else {
+<span class="fc" id="L88">                        deviceReply = deviceReply.replace(RpcMessageUtils.MSGLEN_REGEX_PATTERN.toRegex(), &quot;&quot;)</span>
+<span class="fc" id="L89">                        deviceReply = deviceReply.replace(NetconfMessageUtils.CHUNKED_END_REGEX_PATTERN.toRegex(), &quot;&quot;)</span>
+<span class="fc" id="L90">                        receivedMessage(deviceReply)</span>
+<span class="fc" id="L91">                        deviceReplyBuilder.setLength(0)</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L96">        } catch (e: IOException) {</span>
+<span class="fc" id="L97">            log.warn(&quot;$deviceInfo: Fail while reading from channel&quot;, e)</span>
+<span class="fc" id="L98">            sessionListener.accept(NetconfReceivedEvent(</span>
+<span class="fc" id="L99">                NetconfReceivedEvent.Type.DEVICE_ERROR,</span>
+<span class="fc" id="L100">                deviceInfo = deviceInfo))</span>
+        }
+
+<span class="fc" id="L103">    }</span>
+
+    /**
+     * State machine for the Netconf message parser
+     */
+    internal enum class NetconfMessageState {
+<span class="fc" id="L109">        NO_MATCHING_PATTERN {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L111" title="All 3 branches covered.">                return when (c) {</span>
+<span class="fc" id="L112">                    ']' -&gt; FIRST_BRACKET</span>
+<span class="fc" id="L113">                    '\n' -&gt; FIRST_LF</span>
+<span class="fc" id="L114">                    else -&gt; this</span>
+                }
+            }
+        },
+<span class="fc" id="L118">        FIRST_BRACKET {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L121">                    ']' -&gt; SECOND_BRACKET</span>
+<span class="fc" id="L122">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L126">        SECOND_BRACKET {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L129">                    '&gt;' -&gt; FIRST_BIGGER</span>
+<span class="fc" id="L130">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L134">        FIRST_BIGGER {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L137">                    ']' -&gt; THIRD_BRACKET</span>
+<span class="fc" id="L138">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L142">        THIRD_BRACKET {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L144" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L145">                    ']' -&gt; ENDING_BIGGER</span>
+<span class="fc" id="L146">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L150">        ENDING_BIGGER {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L153">                    '&gt;' -&gt; END_PATTERN</span>
+<span class="fc" id="L154">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L158">        FIRST_LF {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L160" title="All 4 branches covered.">                return when (c) {</span>
+<span class="fc" id="L161">                    '#' -&gt; FIRST_HASH</span>
+<span class="fc" id="L162">                    ']' -&gt; FIRST_BRACKET</span>
+<span class="fc" id="L163">                    '\n' -&gt; this</span>
+<span class="fc" id="L164">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L168">        FIRST_HASH {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L171">                    '#' -&gt; SECOND_HASH</span>
+<span class="fc" id="L172">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L176">        SECOND_HASH {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                return when (c) {</span>
+<span class="fc" id="L179">                    '\n' -&gt; END_CHUNKED_PATTERN</span>
+<span class="fc" id="L180">                    else -&gt; NO_MATCHING_PATTERN</span>
+                }
+            }
+        },
+<span class="fc" id="L184">        END_CHUNKED_PATTERN {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc" id="L186">                return NO_MATCHING_PATTERN</span>
+            }
+        },
+<span class="fc" id="L189">        END_PATTERN {</span>
+            override fun evaluateChar(c: Char): NetconfMessageState {
+<span class="fc" id="L191">                return NO_MATCHING_PATTERN</span>
+            }
+        };
+
+        /**
+         * Evaluate next transition state based on current state and the character read
+         * @param c character read in
+         * @return result of lookup of transition to the next {@link NetconfMessageState}
+         */
+        internal abstract fun evaluateChar(c: Char): NetconfMessageState
+    }
+
+    fun sendMessage(request: String, messageId: String): CompletableFuture&lt;String&gt; {
+<span class="fc" id="L204">        log.info(&quot;$deviceInfo: Sending message: \n $request&quot;)</span>
+<span class="fc" id="L205">        val future = CompletableFuture&lt;String&gt;()</span>
+<span class="fc" id="L206">        replies.put(messageId, future)</span>
+<span class="fc" id="L207">        val outputStream = OutputStreamWriter(out, StandardCharsets.UTF_8)</span>
+<span class="fc" id="L208">        synchronized(this) {</span>
+<span class="fc" id="L209">            try {</span>
+<span class="fc" id="L210">                outputStream.write(request)</span>
+<span class="fc" id="L211">                outputStream.flush()</span>
+<span class="fc" id="L212">            } catch (e: IOException) {</span>
+<span class="fc" id="L213">                log.error(&quot;$deviceInfo: Failed to send message : \n $request&quot;, e)</span>
+<span class="fc" id="L214">                future.completeExceptionally(e)</span>
+<span class="fc" id="L215">            }</span>
+
+        }
+<span class="fc" id="L218">        return future</span>
+    }
+
+    private fun receivedMessage(deviceReply: String) {
+<span class="pc bpc" id="L222" title="1 of 4 branches missed.">        if (deviceReply.contains(RpcMessageUtils.RPC_REPLY) || deviceReply.contains(RpcMessageUtils.RPC_ERROR)</span>
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">            || deviceReply.contains(RpcMessageUtils.HELLO)) {</span>
+<span class="fc" id="L224">            log.info(&quot;$deviceInfo: Received message with messageId: {}  \n $deviceReply&quot;,</span>
+<span class="fc" id="L225">                NetconfMessageUtils.getMsgId(deviceReply))</span>
+
+        } else {
+<span class="fc" id="L228">            log.error(&quot;$deviceInfo: Invalid message received: \n $deviceReply&quot;)</span>
+        }
+<span class="fc" id="L230">        sessionListener.accept(NetconfReceivedEvent(</span>
+<span class="fc" id="L231">            NetconfReceivedEvent.Type.DEVICE_REPLY,</span>
+<span class="fc" id="L232">            deviceReply,</span>
+<span class="fc" id="L233">            NetconfMessageUtils.getMsgId(deviceReply),</span>
+<span class="fc" id="L234">            deviceInfo))</span>
+<span class="fc" id="L235">    }</span>
+
+    /**
+     * Gets the value of the {@link CompletableFuture} from {@link NetconfDeviceCommunicator#sendMessage}
+     * This function is used by NetconfSessionImpl. Needed to wrap exception testing in NetconfSessionImpl.
+     * @param fut {@link CompletableFuture} object
+     * @param timeout the maximum time to wait
+     * @param timeUnit the time unit of the timeout argument
+     * @return the result value
+     * @throws CancellationException if this future was cancelled
+     * @throws ExecutionException if this future completed exceptionally
+     * @throws InterruptedException if the current thread was interrupted while waiting
+     * @throws TimeoutException if the wait timed outStream
+     */
+    internal fun getFutureFromSendMessage(
+        fut: CompletableFuture&lt;String&gt;, timeout: Long, timeUnit: TimeUnit): String {
+<span class="nc" id="L251">        return fut.get(timeout, timeUnit)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

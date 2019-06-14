@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetconfConstant.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils</a> &gt; <span class="el_source">NetconfConstant.kt</span></div><h1>NetconfConstant.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils
+
+<span class="fc" id="L18">enum class NetconfDatastore(val datastore: String) {</span>
+<span class="fc" id="L19">    RUNNING(&quot;running&quot;),</span>
+<span class="fc" id="L20">    CANDIDATE(&quot;candidate&quot;);</span>
+}
+
+<span class="nc" id="L23">enum class ModifyAction(val action: String) {</span>
+<span class="nc" id="L24">    MERGE(&quot;merge&quot;),</span>
+<span class="nc" id="L25">    REPLACE(&quot;replace&quot;),</span>
+<span class="nc" id="L26">    NONE(&quot;none&quot;)</span>
+}
+
+<span class="nc" id="L29">object RpcStatus {</span>
+    const val SUCCESS = &quot;success&quot;
+    const val FAILURE = &quot;failure&quot;
+}
+
+<span class="nc" id="L34">object RpcMessageUtils {</span>
+    const val OPEN = &quot;&lt;&quot;
+    const val CLOSE = &quot;&gt;&quot;
+    const val EQUAL = &quot;=&quot;
+
+    const val HASH = &quot;#&quot;
+    const val HASH_CHAR = '#'
+
+    const val LF_CHAR = '\n'
+    const val NEW_LINE = &quot;\n&quot;
+
+    const val QUOTE = &quot;\&quot;&quot;
+    const val QUOTE_SPACE = &quot;\&quot; &quot;
+
+    const val TAG_CLOSE = &quot;/&gt;&quot;
+    const val END_OF_RPC_OPEN_TAG = &quot;\&quot;&gt;&quot;
+    const val END_PATTERN = &quot;]]&gt;]]&gt;&quot;
+
+    const val HELLO = &quot;hello&quot;
+    const val RPC_REPLY = &quot;rpc-reply&quot;
+    const val RPC_ERROR = &quot;rpc-error&quot;
+
+    const val RPC_OPEN = &quot;&lt;rpc &quot;
+    const val RPC_CLOSE = &quot;&lt;/rpc&gt;&quot;
+    const val WITH_DEFAULT_OPEN = &quot;&lt;with-defaults &quot;
+    const val WITH_DEFAULT_CLOSE = &quot;&lt;/with-defaults&gt;&quot;
+    const val DEFAULT_OPERATION_OPEN = &quot;&lt;default-operation&gt;&quot;
+    const val DEFAULT_OPERATION_CLOSE = &quot;&lt;/default-operation&gt;&quot;
+    const val SUBTREE_FILTER_OPEN = &quot;&lt;filter type=\&quot;subtree\&quot;&gt;&quot;
+    const val SUBTREE_FILTER_CLOSE = &quot;&lt;/filter&gt;&quot;
+    const val TARGET_OPEN = &quot;&lt;target&gt;&quot;
+    const val TARGET_CLOSE = &quot;&lt;/target&gt;&quot;
+    const val SOURCE_OPEN = &quot;&lt;source&gt;&quot;
+    const val SOURCE_CLOSE = &quot;&lt;/source&gt;&quot;
+    const val CONFIG_OPEN = &quot;&lt;config xmlns:nc=\&quot;urn:ietf:params:xml:ns:netconf:base:1.0\&quot;&gt;&quot;
+    const val CONFIG_CLOSE = &quot;&lt;/config&gt;&quot;
+    const val MSGLEN_REGEX_PATTERN = &quot;\n#\\d+\n&quot;
+
+    const val NUMBER_BETWEEN_QUOTES_MATCHER = &quot;\&quot;+([0-9]+)+\&quot;&quot;
+
+    const val XML_HEADER = &quot;&lt;?xml version=\&quot;1.0\&quot; encoding=\&quot;UTF-8\&quot;?&gt;&quot;
+    const val NETCONF_BASE_NAMESPACE = &quot;xmlns=\&quot;urn:ietf:params:xml:ns:netconf:base:1.0\&quot;&quot;
+    const val NETCONF_WITH_DEFAULTS_NAMESPACE = &quot;xmlns=\&quot;urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults\&quot;&quot;
+    const val SUBSCRIPTION_SUBTREE_FILTER_OPEN =
+        &quot;&lt;filter xmlns:base10=\&quot;urn:ietf:params:xml:ns:netconf:base:1.0\&quot; base10:type=\&quot;subtree\&quot;&gt;&quot;
+
+    const val INTERLEAVE_CAPABILITY_STRING = &quot;urn:ietf:params:netconf:capability:interleave:1.0&quot;
+
+    const val CAPABILITY_REGEX = &quot;capability&gt;\\s*(.*?)\\s*capability&gt;&quot;
+
+    const val SESSION_ID_REGEX = &quot;session-id&gt;\\s*(.*?)\\s*session-id&gt;&quot;
+
+    const val MESSAGE_ID_STRING = &quot;message-id&quot;
+
+    const val NETCONF_10_CAPABILITY = &quot;urn:ietf:params:netconf:base:1.0&quot;
+    const val NETCONF_11_CAPABILITY = &quot;urn:ietf:params:netconf:base:1.1&quot;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

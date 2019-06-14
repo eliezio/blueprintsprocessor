@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExecutionServiceHandler.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api</a> &gt; <span class="el_source">ExecutionServiceHandler.kt</span></div><h1>ExecutionServiceHandler.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ * Modifications Copyright © 2019 IBM.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api
+
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactive.awaitSingle
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.*
+import org.onap.ccsdk.cds.blueprintsprocessor.selfservice.api.utils.toProto
+import org.onap.ccsdk.cds.controllerblueprints.common.api.EventType
+import org.onap.ccsdk.cds.controllerblueprints.core.*
+import org.onap.ccsdk.cds.controllerblueprints.core.config.BluePrintPathConfiguration
+import org.onap.ccsdk.cds.controllerblueprints.core.data.ErrorCode
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BluePrintCatalogService
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BluePrintWorkflowExecutionService
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.BluePrintMetadataUtils
+import org.slf4j.LoggerFactory
+import org.springframework.http.codec.multipart.FilePart
+import org.springframework.stereotype.Service
+import java.io.File
+import java.io.IOException
+import java.util.*
+import java.util.stream.Collectors
+
+@Service
+<span class="fc" id="L44">class ExecutionServiceHandler(private val bluePrintPathConfiguration: BluePrintPathConfiguration,</span>
+                              private val bluePrintCatalogService: BluePrintCatalogService,
+                              private val bluePrintWorkflowExecutionService
+                              : BluePrintWorkflowExecutionService&lt;ExecutionServiceInput, ExecutionServiceOutput&gt;) {
+
+<span class="fc" id="L49">    private val log = LoggerFactory.getLogger(ExecutionServiceHandler::class.toString())</span>
+
+    suspend fun upload(filePart: FilePart): String {
+<span class="fc" id="L52">        val saveId = UUID.randomUUID().toString()</span>
+<span class="fc" id="L53">        val blueprintArchive = normalizedPathName(bluePrintPathConfiguration.blueprintArchivePath, saveId)</span>
+<span class="fc" id="L54">        val blueprintWorking = normalizedPathName(bluePrintPathConfiguration.blueprintWorkingPath, saveId)</span>
+<span class="fc" id="L55">        try {</span>
+
+<span class="fc" id="L57">            val compressedFile = normalizedFile(blueprintArchive, &quot;cba.zip&quot;)</span>
+<span class="fc" id="L58">            compressedFile.parentFile.reCreateNBDirs()</span>
+            // Copy the File Part to Local File
+<span class="fc" id="L60">            copyFromFilePart(filePart, compressedFile)</span>
+            // Save the Copied file to Database
+<span class="fc" id="L62">            return bluePrintCatalogService.saveToDatabase(saveId, compressedFile, true)</span>
+<span class="pc" id="L63">        } catch (e: IOException) {</span>
+<span class="nc" id="L64">            throw BluePrintException(ErrorCode.IO_FILE_INTERRUPT.value,</span>
+<span class="nc" id="L65">                &quot;Error in Upload CBA: ${e.message}&quot;, e)</span>
+        } finally {
+<span class="pc" id="L67">            deleteNBDir(blueprintArchive)</span>
+<span class="pc" id="L68">            deleteNBDir(blueprintWorking)</span>
+<span class="nc" id="L69">        }</span>
+    }
+
+    suspend fun remove(name: String, version: String) {
+<span class="nc" id="L73">        bluePrintCatalogService.deleteFromDatabase(name, version)</span>
+    }
+
+    suspend fun process(executionServiceInput: ExecutionServiceInput,
+                        responseObserver: StreamObserver&lt;org.onap.ccsdk.cds.controllerblueprints.processing.api.ExecutionServiceOutput&gt;) {
+        when {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            executionServiceInput.actionIdentifiers.mode == ACTION_MODE_ASYNC -&gt; {</span>
+<span class="nc" id="L80">                GlobalScope.launch(Dispatchers.Default) {</span>
+<span class="nc" id="L81">                    val executionServiceOutput = doProcess(executionServiceInput)</span>
+<span class="nc" id="L82">                    responseObserver.onNext(executionServiceOutput.toProto())</span>
+<span class="nc" id="L83">                    responseObserver.onCompleted()</span>
+<span class="nc" id="L84">                }</span>
+<span class="nc" id="L85">                responseObserver.onNext(response(executionServiceInput).toProto())</span>
+            }
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            executionServiceInput.actionIdentifiers.mode == ACTION_MODE_SYNC -&gt; {</span>
+<span class="fc" id="L88">                val executionServiceOutput = doProcess(executionServiceInput)</span>
+<span class="fc" id="L89">                responseObserver.onNext(executionServiceOutput.toProto())</span>
+<span class="fc" id="L90">                responseObserver.onCompleted()</span>
+            }
+<span class="fc" id="L92">            else -&gt; responseObserver.onNext(response(executionServiceInput,</span>
+<span class="fc" id="L93">                &quot;Failed to process request, 'actionIdentifiers.mode' not specified. Valid value are: 'sync' or 'async'.&quot;,</span>
+<span class="fc" id="L94">                true).toProto());</span>
+        }
+<span class="fc" id="L96">    }</span>
+
+    suspend fun doProcess(executionServiceInput: ExecutionServiceInput): ExecutionServiceOutput {
+<span class="fc" id="L99">        val requestId = executionServiceInput.commonHeader.requestId</span>
+<span class="fc" id="L100">        log.info(&quot;processing request id $requestId&quot;)</span>
+<span class="fc" id="L101">        val actionIdentifiers = executionServiceInput.actionIdentifiers</span>
+<span class="fc" id="L102">        val blueprintName = actionIdentifiers.blueprintName</span>
+<span class="fc" id="L103">        val blueprintVersion = actionIdentifiers.blueprintVersion</span>
+<span class="fc" id="L104">        try {</span>
+<span class="fc" id="L105">            val basePath = bluePrintCatalogService.getFromDatabase(blueprintName, blueprintVersion)</span>
+<span class="fc" id="L106">            log.info(&quot;blueprint base path $basePath&quot;)</span>
+
+<span class="fc" id="L108">            val blueprintRuntimeService = BluePrintMetadataUtils.getBluePrintRuntime(requestId, basePath.toString())</span>
+
+<span class="fc" id="L110">            val output = bluePrintWorkflowExecutionService.executeBluePrintWorkflow(blueprintRuntimeService,</span>
+<span class="fc" id="L111">                executionServiceInput, hashMapOf())</span>
+
+<span class="fc" id="L113">            val errors = blueprintRuntimeService.getBluePrintError().errors</span>
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">            if (errors.isNotEmpty()) {</span>
+<span class="nc" id="L115">                val errorMessage = errors.stream().map { it.toString() }.collect(Collectors.joining(&quot;, &quot;))</span>
+<span class="nc" id="L116">                setErrorStatus(errorMessage, output.status)</span>
+            }
+<span class="fc" id="L118">            return output</span>
+<span class="fc" id="L119">        } catch (e: Exception) {</span>
+<span class="fc" id="L120">            log.error(&quot;fail processing request id $requestId&quot;, e)</span>
+<span class="fc" id="L121">            return response(executionServiceInput, e.localizedMessage, true)</span>
+        }
+    }
+
+<span class="fc" id="L125">    private suspend fun copyFromFilePart(filePart: FilePart, targetFile: File): File {</span>
+<span class="fc" id="L126">        return filePart.transferTo(targetFile)</span>
+<span class="fc" id="L127">            .thenReturn(targetFile)</span>
+<span class="fc" id="L128">            .awaitSingle()</span>
+    }
+
+    private fun setErrorStatus(errorMessage: String, status: Status) {
+<span class="fc" id="L132">        status.errorMessage = errorMessage</span>
+<span class="fc" id="L133">        status.eventType = EventType.EVENT_COMPONENT_FAILURE.name</span>
+<span class="fc" id="L134">        status.code = 500</span>
+<span class="fc" id="L135">        status.message = BluePrintConstants.STATUS_FAILURE</span>
+<span class="fc" id="L136">    }</span>
+
+<span class="nc" id="L138">    private fun response(executionServiceInput: ExecutionServiceInput, errorMessage: String = &quot;&quot;,</span>
+<span class="nc" id="L139">                         failure: Boolean = false): ExecutionServiceOutput {</span>
+<span class="fc" id="L140">        val executionServiceOutput = ExecutionServiceOutput()</span>
+<span class="fc" id="L141">        executionServiceOutput.commonHeader = executionServiceInput.commonHeader</span>
+<span class="fc" id="L142">        executionServiceOutput.actionIdentifiers = executionServiceInput.actionIdentifiers</span>
+<span class="fc" id="L143">        executionServiceOutput.payload = executionServiceInput.payload</span>
+
+<span class="fc" id="L145">        val status = Status()</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (failure) {</span>
+<span class="fc" id="L147">            setErrorStatus(errorMessage, status)</span>
+        } else {
+<span class="nc" id="L149">            status.eventType = EventType.EVENT_COMPONENT_PROCESSING.name</span>
+<span class="nc" id="L150">            status.code = 200</span>
+<span class="nc" id="L151">            status.message = BluePrintConstants.STATUS_PROCESSING</span>
+        }
+
+<span class="fc" id="L154">        executionServiceOutput.status = status</span>
+
+<span class="fc" id="L156">        return executionServiceOutput</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

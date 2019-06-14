@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../style.css">
+</head>
+<body>
+
+
+<h1>BluePrintRestLibData.kt</h1>
+
+<table class="src">
+
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_1'/>
+1
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_1'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>/*</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_2'/>
+2
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_2'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Copyright &#169; 2017-2018 AT&#38;T Intellectual Property.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_3'/>
+3
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_3'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Modifications Copyright &#169; 2019 Huawei.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_4'/>
+4
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_4'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_5'/>
+5
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_5'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_6'/>
+6
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_6'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * you may not use this file except in compliance with the License.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_7'/>
+7
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_7'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * You may obtain a copy of the License at</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_8'/>
+8
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_8'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_9'/>
+9
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_9'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *     http://www.apache.org/licenses/LICENSE-2.0</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_10'/>
+10
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_10'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> *</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_11'/>
+11
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_11'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * Unless required by applicable law or agreed to in writing, software</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_12'/>
+12
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_12'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * distributed under the License is distributed on an &#34;AS IS&#34; BASIS,</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_13'/>
+13
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_13'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_14'/>
+14
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_14'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * See the License for the specific language governing permissions and</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_15'/>
+15
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_15'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> * limitations under the License.</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_16'/>
+16
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_16'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''> */</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_17'/>
+17
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_17'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_18'/>
+18
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_18'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>package org.onap.ccsdk.cds.blueprintsprocessor.rest</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_19'/>
+19
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_19'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_20'/>
+20
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_20'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>open class RestClientProperties {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_21'/>
+21
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_21'>3</a>
+<span>
+1. getType : negated conditional &rarr; TIMED_OUT<br/>
+2. getType : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/RestClientProperties::getType to ( if (x != null) null else throw new RuntimeException ) &rarr; TIMED_OUT<br/>
+3. getType : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var type: String</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_22'/>
+22
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_22'>3</a>
+<span>
+1. getUrl : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+2. getUrl : negated conditional &rarr; KILLED<br/>
+3. getUrl : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/RestClientProperties::getUrl to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var url: String</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_23'/>
+23
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_23'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_24'/>
+24
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_24'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_25'/>
+25
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_25'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>open class SSLRestClientProperties : RestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_26'/>
+26
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_26'>3</a>
+<span>
+1. getKeyStoreInstance : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+2. getKeyStoreInstance : negated conditional &rarr; KILLED<br/>
+3. getKeyStoreInstance : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getKeyStoreInstance to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var keyStoreInstance: String // JKS, PKCS12</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_27'/>
+27
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_27'>3</a>
+<span>
+1. getSslTrust : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+2. getSslTrust : negated conditional &rarr; KILLED<br/>
+3. getSslTrust : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslTrust to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var sslTrust: String</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_28'/>
+28
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_28'>3</a>
+<span>
+1. getSslTrustPassword : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+2. getSslTrustPassword : negated conditional &rarr; KILLED<br/>
+3. getSslTrustPassword : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslTrustPassword to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var sslTrustPassword: String</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_29'/>
+29
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_29'>1</a>
+<span>
+1. getSslKey : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslKey to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>    var sslKey: String? = null</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_30'/>
+30
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_30'>1</a>
+<span>
+1. getSslKeyPassword : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslKeyPassword to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>    var sslKeyPassword: String? = null</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_31'/>
+31
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_31'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_32'/>
+32
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_32'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_33'/>
+33
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_33'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>open class SSLBasicAuthRestClientProperties : SSLRestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_34'/>
+34
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_34'>1</a>
+<span>
+1. getBasicAuth : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLBasicAuthRestClientProperties::getBasicAuth to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>    var basicAuth: BasicAuthRestClientProperties? = null</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_35'/>
+35
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_35'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_36'/>
+36
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_36'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_37'/>
+37
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_37'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>open class SSLTokenAuthRestClientProperties : SSLRestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_38'/>
+38
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_38'>1</a>
+<span>
+1. getTokenAuth : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLTokenAuthRestClientProperties::getTokenAuth to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>    var tokenAuth: TokenAuthRestClientProperties? = null</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_39'/>
+39
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_39'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_40'/>
+40
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_40'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_41'/>
+41
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_41'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>open class BasicAuthRestClientProperties : RestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_42'/>
+42
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_42'>3</a>
+<span>
+1. getPassword : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+2. getPassword : negated conditional &rarr; KILLED<br/>
+3. getPassword : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/BasicAuthRestClientProperties::getPassword to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var password: String</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_43'/>
+43
+</td>
+<td class='uncertain'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_43'>3</a>
+<span>
+1. getUsername : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT<br/>
+2. getUsername : negated conditional &rarr; KILLED<br/>
+3. getUsername : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/BasicAuthRestClientProperties::getUsername to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='uncertain'>    lateinit var username: String</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_44'/>
+44
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_44'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_45'/>
+45
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_45'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_46'/>
+46
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_46'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class=''>open class TokenAuthRestClientProperties : RestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='covered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_47'/>
+47
+</td>
+<td class='killed'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_47'>1</a>
+<span>
+1. getToken : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/TokenAuthRestClientProperties::getToken to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED<br/>
+
+</span>
+</span>
+</td>
+<td class='covered'><pre><span  class='killed'>    var token: String? = null</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_48'/>
+48
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_48'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_49'/>
+49
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_49'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_50'/>
+50
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_50'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class=''>open class DME2RestClientProperties : RestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_51'/>
+51
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_51'>3</a>
+<span>
+1. getService : negated conditional &rarr; NO_COVERAGE<br/>
+2. getService : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getService to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getService : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var service: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_52'/>
+52
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_52'>3</a>
+<span>
+1. getSubContext : negated conditional &rarr; NO_COVERAGE<br/>
+2. getSubContext : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getSubContext to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getSubContext : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var subContext: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_53'/>
+53
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_53'>3</a>
+<span>
+1. getVersion : negated conditional &rarr; NO_COVERAGE<br/>
+2. getVersion : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getVersion to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getVersion : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var version: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_54'/>
+54
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_54'>3</a>
+<span>
+1. getEnvContext : negated conditional &rarr; NO_COVERAGE<br/>
+2. getEnvContext : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getEnvContext to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getEnvContext : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var envContext: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_55'/>
+55
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_55'>3</a>
+<span>
+1. getRouteOffer : negated conditional &rarr; NO_COVERAGE<br/>
+2. getRouteOffer : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getRouteOffer to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getRouteOffer : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var routeOffer: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_56'/>
+56
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_56'>1</a>
+<span>
+1. getPartner : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getPartner to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    var partner: String? = null</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_57'/>
+57
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_57'>3</a>
+<span>
+1. getAppId : negated conditional &rarr; NO_COVERAGE<br/>
+2. getAppId : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getAppId to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getAppId : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var appId: String</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_58'/>
+58
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_58'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_59'/>
+59
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_59'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''></span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_60'/>
+60
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_60'></a>
+<span>
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class=''>open class PolicyManagerRestClientProperties : RestClientProperties() {</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_61'/>
+61
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_61'>3</a>
+<span>
+1. getEnv : negated conditional &rarr; NO_COVERAGE<br/>
+2. getEnv : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/PolicyManagerRestClientProperties::getEnv to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getEnv : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var env: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_62'/>
+62
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_62'>3</a>
+<span>
+1. getClientAuth : negated conditional &rarr; NO_COVERAGE<br/>
+2. getClientAuth : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/PolicyManagerRestClientProperties::getClientAuth to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getClientAuth : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var clientAuth: String</span></pre></td></tr>
+
+
+<tr>
+<td class='uncovered'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_63'/>
+63
+</td>
+<td class='survived'>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_63'>3</a>
+<span>
+1. getAuthorisation : negated conditional &rarr; NO_COVERAGE<br/>
+2. getAuthorisation : mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/PolicyManagerRestClientProperties::getAuthorisation to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE<br/>
+3. getAuthorisation : removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE<br/>
+
+</span>
+</span>
+</td>
+<td class='uncovered'><pre><span  class='survived'>    lateinit var authorisation: String</span></pre></td></tr>
+
+
+<tr>
+<td class='na'>
+<a name='org.pitest.mutationtest.report.html.SourceFile@7e29471f_64'/>
+64
+</td>
+<td class=''>
+<span class='pop'>
+<a href='#grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_64'></a>
+<span>
+</span>
+</span>
+</td>
+<td class=''><pre><span  class=''>}</span></pre></td></tr>
+
+
+
+<tr><td></td><td></td><td><h2>Mutations</h2></td></tr>
+
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_21'>21</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_21'/> 
+
+<p class='TIMED_OUT'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getType<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; TIMED_OUT</p> <p class='TIMED_OUT'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getType<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/RestClientProperties::getType to ( if (x != null) null else throw new RuntimeException ) &rarr; TIMED_OUT</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getType<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_22'>22</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_22'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getUrl<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testRestClientProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getUrl<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testRestClientProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/RestClientProperties::getUrl to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getUrl<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_26'>26</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_26'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getKeyStoreInstance<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getKeyStoreInstance<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getKeyStoreInstance to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getKeyStoreInstance<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_27'>27</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_27'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getSslTrust<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getSslTrust<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslTrust to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getSslTrust<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_28'>28</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_28'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getSslTrustPassword<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getSslTrustPassword<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslTrustPassword to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getSslTrustPassword<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_29'>29</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_29'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getSslKey<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslKey to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_30'>30</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_30'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getSslKeyPassword<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLRestClientProperties::getSslKeyPassword to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_34'>34</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_34'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getBasicAuth<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLBasicAuthRestClientProperties::getBasicAuth to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_38'>38</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_38'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getTokenAuth<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLTokenProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/SSLTokenAuthRestClientProperties::getTokenAuth to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_42'>42</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_42'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getPassword<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getPassword<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/BasicAuthRestClientProperties::getPassword to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getPassword<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_43'>43</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_43'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getUsername<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> negated conditional &rarr; KILLED</p> <p class='KILLED'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getUsername<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/BasicAuthRestClientProperties::getUsername to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> <p class='TIMED_OUT'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getUsername<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; TIMED_OUT</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_47'>47</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_47'/> 
+
+<p class='KILLED'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getToken<br/><b>Killed by : </b>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLTokenProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest)</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/TokenAuthRestClientProperties::getToken to ( if (x != null) null else throw new RuntimeException ) &rarr; KILLED</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_51'>51</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_51'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getService<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getService<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getService to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getService<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_52'>52</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_52'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getSubContext<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getSubContext<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getSubContext to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getSubContext<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_53'>53</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_53'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getVersion<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getVersion<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getVersion to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getVersion<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_54'>54</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_54'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getEnvContext<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getEnvContext<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getEnvContext to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getEnvContext<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_55'>55</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_55'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getRouteOffer<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getRouteOffer<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getRouteOffer to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getRouteOffer<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_56'>56</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_56'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getPartner<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getPartner to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_57'>57</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_57'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getAppId<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getAppId<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/DME2RestClientProperties::getAppId to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getAppId<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_61'>61</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_61'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getEnv<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getEnv<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/PolicyManagerRestClientProperties::getEnv to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getEnv<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_62'>62</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_62'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getClientAuth<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getClientAuth<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/PolicyManagerRestClientProperties::getClientAuth to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getClientAuth<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+<tr>
+<td><a href='#org.pitest.mutationtest.report.html.SourceFile@7e29471f_63'>63</a></td> 
+<td></td>
+<td>
+
+<a name='grouporg.pitest.mutationtest.report.html.SourceFile@7e29471f_63'/> 
+
+<p class='NO_COVERAGE'><span class='pop'>1.<span><b>1</b><br/><b>Location : </b>getAuthorisation<br/><b>Killed by : </b>none</span></span> negated conditional &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>2.<span><b>2</b><br/><b>Location : </b>getAuthorisation<br/><b>Killed by : </b>none</span></span> mutated return of Object value for org/onap/ccsdk/cds/blueprintsprocessor/rest/PolicyManagerRestClientProperties::getAuthorisation to ( if (x != null) null else throw new RuntimeException ) &rarr; NO_COVERAGE</p> <p class='NO_COVERAGE'><span class='pop'>3.<span><b>3</b><br/><b>Location : </b>getAuthorisation<br/><b>Killed by : </b>none</span></span> removed call to kotlin/jvm/internal/Intrinsics::throwUninitializedPropertyAccessException &rarr; NO_COVERAGE</p> 
+</td>
+</tr>
+
+</table>
+
+
+<h2>Active mutators</h2>
+<ul>
+<li class='mutator'>CONDITIONALS_BOUNDARY_MUTATOR</li>
+<li class='mutator'>INCREMENTS_MUTATOR</li>
+<li class='mutator'>INVERT_NEGS_MUTATOR</li>
+<li class='mutator'>MATH_MUTATOR</li>
+<li class='mutator'>NEGATE_CONDITIONALS_MUTATOR</li>
+<li class='mutator'>RETURN_VALS_MUTATOR</li>
+<li class='mutator'>VOID_METHOD_CALL_MUTATOR</li>
+
+</ul>
+
+<h2>Tests examined</h2>
+<ul>
+<li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest.testPatch(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest) (155 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.RestResourceResolutionProcessorTest.test rest aai get resource resolution(org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.RestResourceResolutionProcessorTest) (7255 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLTokenProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (11 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest.testBaseAuth(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest) (2530 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (12 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.RestResourceResolutionProcessorTest.test rest aai put resource resolution(org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.RestResourceResolutionProcessorTest) (3208 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLTokenPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (13 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest.testSimpleBasicAuth(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest) (148 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (13 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest.testSampleAaiReq(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.RestClientServiceTest) (1054 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testRestClientProperties(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (7 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testBlueprintWebClientService(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (135 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLBasicPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (6 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testSSLNoAuthPropertiesAsJson(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (6 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest.testBlueprintWebClientServiceWithJsonNode(org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyServiceTest) (24 ms)</li><li>org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.RestResourceResolutionProcessorTest.test rest resource resolution(org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor.RestResourceResolutionProcessorTest) (3208 ms)</li>
+</ul>
+
+<br/>
+
+Report generated by <a href='http://pitest.org'>PIT</a> 1.4.8
+
+</body>
+</html>

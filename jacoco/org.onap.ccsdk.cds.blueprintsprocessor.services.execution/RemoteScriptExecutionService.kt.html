@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoteScriptExecutionService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.services.execution</a> &gt; <span class="el_source">RemoteScriptExecutionService.kt</span></div><h1>RemoteScriptExecutionService.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2019 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.services.execution
+
+import com.fasterxml.jackson.databind.JsonNode
+import com.google.protobuf.Struct
+import com.google.protobuf.Timestamp
+import com.google.protobuf.util.JsonFormat
+import io.grpc.ManagedChannel
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.*
+import org.onap.ccsdk.cds.blueprintsprocessor.grpc.service.BluePrintGrpcLibPropertyService
+import org.onap.ccsdk.cds.controllerblueprints.command.api.*
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.context.annotation.Scope
+import org.springframework.stereotype.Service
+
+
+interface RemoteScriptExecutionService {
+    suspend fun init(selector: String)
+    suspend fun prepareEnv(prepareEnvInput: PrepareRemoteEnvInput): RemoteScriptExecutionOutput
+    suspend fun executeCommand(remoteExecutionInput: RemoteScriptExecutionInput): RemoteScriptExecutionOutput
+    suspend fun close()
+}
+
+@Service(ExecutionServiceConstant.SERVICE_GRPC_REMOTE_SCRIPT_EXECUTION)
+@ConditionalOnProperty(prefix = &quot;blueprintprocessor.remoteScriptCommand&quot;, name = arrayOf(&quot;enabled&quot;),
+    havingValue = &quot;true&quot;, matchIfMissing = false)
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+<span class="nc" id="L46">class GrpcRemoteScriptExecutionService(private val bluePrintGrpcLibPropertyService: BluePrintGrpcLibPropertyService)</span>
+    : RemoteScriptExecutionService {
+
+<span class="nc" id="L49">    private val log = LoggerFactory.getLogger(GrpcRemoteScriptExecutionService::class.java)!!</span>
+
+    private var channel: ManagedChannel? = null
+    private lateinit var commandExecutorServiceGrpc: CommandExecutorServiceGrpc.CommandExecutorServiceBlockingStub
+
+    override suspend fun init(selector: String) {
+        // Get the GRPC Client Service based on selector
+<span class="nc" id="L56">        val grpcClientService = bluePrintGrpcLibPropertyService.blueprintGrpcClientService(selector)</span>
+        // Get the GRPC Channel
+<span class="nc" id="L58">        channel = grpcClientService.channel()</span>
+        // Create Non Blocking Stub
+<span class="nc" id="L60">        commandExecutorServiceGrpc = CommandExecutorServiceGrpc.newBlockingStub(channel)</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        checkNotNull(commandExecutorServiceGrpc) {</span>
+<span class="nc" id="L63">            &quot;failed to create command executor grpc client for selector($selector)&quot;</span>
+        }
+<span class="nc" id="L65">    }</span>
+
+    override suspend fun prepareEnv(prepareEnvInput: PrepareRemoteEnvInput)
+            : RemoteScriptExecutionOutput {
+<span class="nc" id="L69">        val grpResponse = commandExecutorServiceGrpc.prepareEnv(prepareEnvInput.asGrpcData())</span>
+
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        checkNotNull(grpResponse.status) {</span>
+<span class="nc" id="L72">            &quot;failed to get GRPC prepare env response status for requestId($prepareEnvInput.requestId)&quot;</span>
+        }
+
+<span class="nc" id="L75">        val remoteScriptExecutionOutput = grpResponse.asJavaData()</span>
+<span class="nc" id="L76">        log.debug(&quot;Received prepare env response from command server for requestId($prepareEnvInput.requestId)&quot;)</span>
+
+<span class="nc" id="L78">        return remoteScriptExecutionOutput</span>
+    }
+
+    override suspend fun executeCommand(remoteExecutionInput: RemoteScriptExecutionInput)
+            : RemoteScriptExecutionOutput {
+
+<span class="nc" id="L84">        val grpResponse = commandExecutorServiceGrpc.executeCommand(remoteExecutionInput.asGrpcData())</span>
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        checkNotNull(grpResponse.status) {</span>
+<span class="nc" id="L87">            &quot;failed to get GRPC response status for requestId($remoteExecutionInput.requestId)&quot;</span>
+        }
+
+<span class="nc" id="L90">        val remoteScriptExecutionOutput = grpResponse.asJavaData()</span>
+<span class="nc" id="L91">        log.debug(&quot;Received response from command server for requestId($remoteExecutionInput.requestId)&quot;)</span>
+
+<span class="nc" id="L93">        return remoteScriptExecutionOutput</span>
+    }
+
+    override suspend fun close() {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        channel?.shutdownNow()</span>
+<span class="nc" id="L98">    }</span>
+
+
+    fun PrepareRemoteEnvInput.asGrpcData(): PrepareEnvInput {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        val correlationId = this.correlationId ?: this.requestId</span>
+
+<span class="nc" id="L104">        val packageList = mutableListOf&lt;Packages&gt;()</span>
+
+<span class="nc" id="L106">        this.packages.toList().forEach {</span>
+<span class="nc" id="L107">            val pckage = Packages.newBuilder()</span>
+<span class="nc" id="L108">            JsonFormat.parser().merge(it.toString(), pckage)</span>
+<span class="nc" id="L109">            packageList.add(pckage.build())</span>
+<span class="nc" id="L110">        }</span>
+
+<span class="nc" id="L112">        return PrepareEnvInput.newBuilder()</span>
+<span class="nc" id="L113">            .setIdentifiers(this.remoteIdentifier!!.asGrpcData())</span>
+<span class="nc" id="L114">            .setRequestId(this.requestId)</span>
+<span class="nc" id="L115">            .setCorrelationId(correlationId)</span>
+<span class="nc" id="L116">            .setTimeOut(this.timeOut.toInt())</span>
+<span class="nc" id="L117">            .addAllPackages(packageList)</span>
+<span class="nc" id="L118">            .setProperties(this.properties.asGrpcData())</span>
+<span class="nc" id="L119">            .build()</span>
+    }
+
+    fun RemoteScriptExecutionInput.asGrpcData(): ExecutionInput {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        val correlationId = this.correlationId ?: this.requestId</span>
+<span class="nc" id="L124">        return ExecutionInput.newBuilder()</span>
+<span class="nc" id="L125">            .setRequestId(this.requestId)</span>
+<span class="nc" id="L126">            .setCorrelationId(correlationId)</span>
+<span class="nc" id="L127">            .setIdentifiers(this.remoteIdentifier!!.asGrpcData())</span>
+<span class="nc" id="L128">            .setCommand(this.command)</span>
+<span class="nc" id="L129">            .setTimeOut(this.timeOut.toInt())</span>
+<span class="nc" id="L130">            .setProperties(this.properties.asGrpcData())</span>
+<span class="nc" id="L131">            .setTimestamp(Timestamp.getDefaultInstance())</span>
+<span class="nc" id="L132">            .build()</span>
+    }
+
+    fun RemoteIdentifier.asGrpcData(): Identifiers? {
+<span class="nc" id="L136">        return Identifiers.newBuilder()</span>
+<span class="nc" id="L137">            .setBlueprintName(this.blueprintName)</span>
+<span class="nc" id="L138">            .setBlueprintVersion(this.blueprintVersion)</span>
+<span class="nc" id="L139">            .build()</span>
+    }
+
+    fun Map&lt;String, JsonNode&gt;.asGrpcData(): Struct {
+<span class="nc" id="L143">        val struct = Struct.newBuilder()</span>
+<span class="nc" id="L144">        JsonFormat.parser().merge(JacksonUtils.getJson(this), struct)</span>
+<span class="nc" id="L145">        return struct.build()</span>
+    }
+
+    fun ExecutionOutput.asJavaData(): RemoteScriptExecutionOutput {
+<span class="nc" id="L149">        return RemoteScriptExecutionOutput(</span>
+<span class="nc" id="L150">            requestId = this.requestId,</span>
+<span class="nc" id="L151">            response = this.response,</span>
+<span class="nc" id="L152">            status = StatusType.valueOf(this.status.name)</span>
+        )
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

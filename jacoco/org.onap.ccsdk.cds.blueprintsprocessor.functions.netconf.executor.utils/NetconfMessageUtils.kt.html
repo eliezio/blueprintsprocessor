@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetconfMessageUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils</a> &gt; <span class="el_source">NetconfMessageUtils.kt</span></div><h1>NetconfMessageUtils.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2019 AT&amp;T, Bell Canada
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.utils
+
+import org.apache.commons.lang3.StringUtils
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api.NetconfException
+import org.slf4j.LoggerFactory
+import org.xml.sax.InputSource
+import java.io.StringReader
+import java.nio.charset.StandardCharsets
+import java.util.regex.MatchResult
+import java.util.regex.Pattern
+import javax.xml.XMLConstants
+import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.text.Charsets.UTF_8
+
+
+<span class="nc" id="L31">class NetconfMessageUtils {</span>
+
+    companion object {
+<span class="fc" id="L34">        val log = LoggerFactory.getLogger(NetconfMessageUtils::class.java)</span>
+
+        const val NEW_LINE = &quot;\n&quot;
+        const val CHUNKED_END_REGEX_PATTERN = &quot;\n##\n&quot;
+
+<span class="pc" id="L39">        val CAPABILITY_REGEX_PATTERN: Pattern = Pattern.compile(RpcMessageUtils.CAPABILITY_REGEX)</span>
+<span class="pc" id="L40">        val SESSION_ID_REGEX_PATTERN: Pattern = Pattern.compile(RpcMessageUtils.SESSION_ID_REGEX)</span>
+
+        private val CHUNKED_FRAMING_PATTERN: Pattern =
+<span class="fc" id="L43">            Pattern.compile(&quot;(\\n#([1-9][0-9]*)\\n(.+))+\\n##\\n&quot;, Pattern.DOTALL)</span>
+<span class="fc" id="L44">        private val CHUNKED_SIZE_PATTERN: Pattern = Pattern.compile(&quot;\\n#([1-9][0-9]*)\\n&quot;)</span>
+<span class="fc" id="L45">        private val MSG_ID_STRING_PATTERN = Pattern.compile(&quot;${RpcMessageUtils.MESSAGE_ID_STRING}=\&quot;(.*?)\&quot;&quot;)</span>
+
+        fun getConfig(messageId: String, configType: String, filterContent: String?): String {
+<span class="fc" id="L48">            val request = StringBuilder()</span>
+
+<span class="fc" id="L50">            request.append(&quot;&lt;get-config&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L51">            request.append(RpcMessageUtils.SOURCE_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L52">            request.append(RpcMessageUtils.OPEN).append(configType).append(RpcMessageUtils.TAG_CLOSE)</span>
+<span class="fc" id="L53">                .append(NEW_LINE)</span>
+<span class="fc" id="L54">            request.append(RpcMessageUtils.SOURCE_CLOSE).append(NEW_LINE)</span>
+
+<span class="pc bpc" id="L56" title="1 of 6 branches missed.">            if (!filterContent.isNullOrEmpty()) {</span>
+<span class="fc" id="L57">                request.append(RpcMessageUtils.SUBTREE_FILTER_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L58">                request.append(filterContent).append(NEW_LINE)</span>
+<span class="fc" id="L59">                request.append(RpcMessageUtils.SUBTREE_FILTER_CLOSE).append(NEW_LINE)</span>
+            }
+<span class="fc" id="L61">            request.append(&quot;&lt;/get-config&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L63">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun doWrappedRpc(messageId: String, request: String): String {
+<span class="fc" id="L67">            val rpc = StringBuilder(RpcMessageUtils.XML_HEADER).append(NEW_LINE)</span>
+<span class="fc" id="L68">            rpc.append(RpcMessageUtils.RPC_OPEN)</span>
+<span class="fc" id="L69">            rpc.append(RpcMessageUtils.MESSAGE_ID_STRING).append(RpcMessageUtils.EQUAL)</span>
+<span class="fc" id="L70">            rpc.append(RpcMessageUtils.QUOTE).append(messageId).append(RpcMessageUtils.QUOTE_SPACE)</span>
+<span class="fc" id="L71">            rpc.append(RpcMessageUtils.NETCONF_BASE_NAMESPACE).append(RpcMessageUtils.CLOSE)</span>
+<span class="fc" id="L72">                .append(NEW_LINE)</span>
+<span class="fc" id="L73">            rpc.append(request)</span>
+<span class="fc" id="L74">            rpc.append(RpcMessageUtils.RPC_CLOSE)</span>
+            // rpc.append(NEW_LINE).append(END_PATTERN);
+
+<span class="fc" id="L77">            return rpc.toString()</span>
+        }
+
+        fun editConfig(messageId: String, configType: String, defaultOperation: String?,
+                       newConfiguration: String): String {
+
+<span class="fc" id="L83">            val request = StringBuilder()</span>
+
+<span class="fc" id="L85">            request.append(&quot;&lt;edit-config&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L86">            request.append(RpcMessageUtils.TARGET_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L87">            request.append(RpcMessageUtils.OPEN).append(configType).append(RpcMessageUtils.TAG_CLOSE)</span>
+<span class="fc" id="L88">                .append(NEW_LINE)</span>
+<span class="fc" id="L89">            request.append(RpcMessageUtils.TARGET_CLOSE).append(NEW_LINE)</span>
+
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (defaultOperation != null) {</span>
+<span class="fc" id="L92">                request.append(RpcMessageUtils.DEFAULT_OPERATION_OPEN).append(defaultOperation)</span>
+<span class="fc" id="L93">                    .append(RpcMessageUtils.DEFAULT_OPERATION_CLOSE)</span>
+<span class="fc" id="L94">                request.append(NEW_LINE)</span>
+            }
+
+<span class="fc" id="L97">            request.append(RpcMessageUtils.CONFIG_OPEN).append(NEW_LINE)</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            request.append(newConfiguration.trim { it &lt;= ' ' }).append(NEW_LINE)</span>
+<span class="fc" id="L99">            request.append(RpcMessageUtils.CONFIG_CLOSE).append(NEW_LINE)</span>
+<span class="fc" id="L100">            request.append(&quot;&lt;/edit-config&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L102">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun validate(messageId: String, configType: String): String {
+<span class="fc" id="L106">            val request = StringBuilder()</span>
+
+<span class="fc" id="L108">            request.append(&quot;&lt;validate&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L109">            request.append(RpcMessageUtils.SOURCE_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L110">            request.append(RpcMessageUtils.OPEN).append(configType).append(RpcMessageUtils.TAG_CLOSE)</span>
+<span class="fc" id="L111">                .append(NEW_LINE)</span>
+<span class="fc" id="L112">            request.append(RpcMessageUtils.SOURCE_CLOSE).append(NEW_LINE)</span>
+<span class="fc" id="L113">            request.append(&quot;&lt;/validate&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L115">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun commit(messageId: String, confirmed: Boolean, confirmTimeout: Int, persist: String,
+                   persistId: String): String {
+
+<span class="fc bfc" id="L121" title="All 8 branches covered.">            if (!persist.isEmpty() &amp;&amp; !persistId.isEmpty()) {</span>
+<span class="fc" id="L122">                throw NetconfException(&quot;Can't proceed &lt;commit&gt; with both persist($persist) and &quot; +</span>
+<span class="fc" id="L123">                        &quot;persistId($persistId) specified. Only one should be specified.&quot;)</span>
+            }
+<span class="fc bfc" id="L125" title="All 6 branches covered.">            if (confirmed &amp;&amp; !persistId.isEmpty()) {</span>
+<span class="fc" id="L126">                throw NetconfException(&quot;Can't proceed &lt;commit&gt; with both confirmed flag and &quot; +</span>
+<span class="fc" id="L127">                        &quot;persistId($persistId) specified. Only one should be specified.&quot;)</span>
+            }
+
+<span class="fc" id="L130">            val request = StringBuilder()</span>
+<span class="fc" id="L131">            request.append(&quot;&lt;commit&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            if (confirmed) {</span>
+<span class="fc" id="L133">                request.append(&quot;&lt;confirmed/&gt;&quot;)</span>
+<span class="fc" id="L134">                request.append(&quot;&lt;confirm-timeout&gt;$confirmTimeout&lt;/confirm-timeout&gt;&quot;)</span>
+<span class="fc bfc" id="L135" title="All 4 branches covered.">                if (!persist.isEmpty()) {</span>
+<span class="fc" id="L136">                    request.append(&quot;&lt;persist&gt;$persist&lt;/persist&gt;&quot;)</span>
+                }
+            }
+<span class="fc bfc" id="L139" title="All 4 branches covered.">            if (!persistId.isEmpty()) {</span>
+<span class="fc" id="L140">                request.append(&quot;&lt;persist-id&gt;$persistId&lt;/persist-id&gt;&quot;)</span>
+            }
+<span class="fc" id="L142">            request.append(&quot;&lt;/commit&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L144">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun cancelCommit(messageId: String, persistId: String): String {
+<span class="fc" id="L148">            val request = StringBuilder()</span>
+<span class="fc" id="L149">            request.append(&quot;&lt;cancel-commit&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc bfc" id="L150" title="All 4 branches covered.">            if (!persistId.isEmpty()) {</span>
+<span class="fc" id="L151">                request.append(&quot;&lt;persist-id&gt;$persistId&lt;/persist-id&gt;&quot;)</span>
+            }
+<span class="fc" id="L153">            request.append(&quot;&lt;/cancel-commit&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L155">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun unlock(messageId: String, configType: String): String {
+<span class="fc" id="L159">            val request = StringBuilder()</span>
+
+<span class="fc" id="L161">            request.append(&quot;&lt;unlock&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L162">            request.append(RpcMessageUtils.TARGET_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L163">            request.append(RpcMessageUtils.OPEN).append(configType).append(RpcMessageUtils.TAG_CLOSE)</span>
+<span class="fc" id="L164">                .append(NEW_LINE)</span>
+<span class="fc" id="L165">            request.append(RpcMessageUtils.TARGET_CLOSE).append(NEW_LINE)</span>
+<span class="fc" id="L166">            request.append(&quot;&lt;/unlock&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L168">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        @Throws(NetconfException::class)
+        fun deleteConfig(messageId: String, configType: String): String {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">            if (configType == NetconfDatastore.RUNNING.datastore) {</span>
+<span class="fc" id="L174">                log.warn(&quot;Target configuration for delete operation can't be \&quot;running\&quot; {}&quot;, configType)</span>
+<span class="fc" id="L175">                throw NetconfException(&quot;Target configuration for delete operation can't be running&quot;)</span>
+            }
+
+<span class="fc" id="L178">            val request = StringBuilder()</span>
+
+<span class="fc" id="L180">            request.append(&quot;&lt;delete-config&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L181">            request.append(RpcMessageUtils.TARGET_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L182">            request.append(RpcMessageUtils.OPEN).append(configType)</span>
+<span class="fc" id="L183">                .append(RpcMessageUtils.TAG_CLOSE)</span>
+<span class="fc" id="L184">                .append(NEW_LINE)</span>
+<span class="fc" id="L185">            request.append(RpcMessageUtils.TARGET_CLOSE).append(NEW_LINE)</span>
+<span class="fc" id="L186">            request.append(&quot;&lt;/delete-config&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L188">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun discardChanges(messageId: String): String {
+<span class="fc" id="L192">            val request = StringBuilder()</span>
+<span class="fc" id="L193">            request.append(&quot;&lt;discard-changes/&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L194">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun lock(messageId: String, configType: String): String {
+<span class="fc" id="L198">            val request = StringBuilder()</span>
+
+<span class="fc" id="L200">            request.append(&quot;&lt;lock&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L201">            request.append(RpcMessageUtils.TARGET_OPEN).append(NEW_LINE)</span>
+<span class="fc" id="L202">            request.append(RpcMessageUtils.OPEN).append(configType).append(RpcMessageUtils.TAG_CLOSE)</span>
+<span class="fc" id="L203">                .append(NEW_LINE)</span>
+<span class="fc" id="L204">            request.append(RpcMessageUtils.TARGET_CLOSE).append(NEW_LINE)</span>
+<span class="fc" id="L205">            request.append(&quot;&lt;/lock&gt;&quot;).append(NEW_LINE)</span>
+
+<span class="fc" id="L207">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun closeSession(messageId: String, force: Boolean): String {
+<span class="fc" id="L211">            val request = StringBuilder()</span>
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (force) {</span>
+<span class="fc" id="L214">                request.append(&quot;&lt;kill-session/&gt;&quot;).append(NEW_LINE)</span>
+            } else {
+<span class="fc" id="L216">                request.append(&quot;&lt;close-session/&gt;&quot;).append(NEW_LINE)</span>
+            }
+
+<span class="fc" id="L219">            return doWrappedRpc(messageId, request.toString())</span>
+        }
+
+        fun validateRPCXML(rpcRequest: String): Boolean {
+<span class="fc" id="L223">            try {</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">                if (StringUtils.isBlank(rpcRequest)) {</span>
+<span class="fc" id="L225">                    return false</span>
+                }
+<span class="fc" id="L227">                val dbf = DocumentBuilderFactory.newInstance()</span>
+<span class="fc" id="L228">                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)</span>
+<span class="fc" id="L229">                dbf.setFeature(&quot;http://xml.org/sax/features/external-general-entities&quot;, false)</span>
+<span class="fc" id="L230">                dbf.setFeature(&quot;http://xml.org/sax/features/external-parameter-entities&quot;, false)</span>
+<span class="fc" id="L231">                dbf.newDocumentBuilder()</span>
+<span class="fc" id="L232">                    .parse(InputSource(StringReader(rpcRequest.replace(RpcMessageUtils.END_PATTERN, &quot;&quot;))))</span>
+<span class="fc" id="L233">                return true</span>
+<span class="fc" id="L234">            } catch (e: Exception) {</span>
+<span class="fc" id="L235">                return false</span>
+            }
+
+        }
+
+        fun getMsgId(message: String): String {
+<span class="fc" id="L241">            val matcher = MSG_ID_STRING_PATTERN.matcher(message)</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">            if (matcher.find()) {</span>
+<span class="fc" id="L243">                return matcher.group(1)</span>
+            }
+<span class="fc bfc" id="L245" title="All 2 branches covered.">            return if (message.contains(RpcMessageUtils.HELLO)) {</span>
+<span class="fc" id="L246">                (-1).toString()</span>
+<span class="fc" id="L247">            } else &quot;&quot;</span>
+        }
+
+        fun validateChunkedFraming(reply: String): Boolean {
+<span class="fc" id="L251">            val matcher = CHUNKED_FRAMING_PATTERN.matcher(reply)</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">            if (!matcher.matches()) {</span>
+<span class="fc" id="L253">                log.debug(&quot;Error Reply: {}&quot;, reply)</span>
+<span class="fc" id="L254">                return false</span>
+            }
+<span class="fc" id="L256">            val chunkM = CHUNKED_SIZE_PATTERN.matcher(reply)</span>
+<span class="fc" id="L257">            val chunks = ArrayList&lt;MatchResult&gt;()</span>
+<span class="fc" id="L258">            var chunkdataStr = &quot;&quot;</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            while (chunkM.find()) {</span>
+<span class="fc" id="L260">                chunks.add(chunkM.toMatchResult())</span>
+                // extract chunk-data (and later) in bytes
+<span class="fc" id="L262">                val bytes = Integer.parseInt(chunkM.group(1))</span>
+<span class="fc" id="L263">                val chunkdata = reply.substring(chunkM.end()).toByteArray(StandardCharsets.UTF_8)</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">                if (bytes &gt; chunkdata.size) {</span>
+<span class="nc" id="L265">                    log.debug(&quot;Error Reply - wrong chunk size {}&quot;, reply)</span>
+<span class="nc" id="L266">                    return false</span>
+                }
+                // convert (only) chunk-data part into String
+<span class="fc" id="L269">                chunkdataStr = String(chunkdata, 0, bytes, StandardCharsets.UTF_8)</span>
+                // skip chunk-data part from next match
+<span class="fc" id="L271">                chunkM.region(chunkM.end() + chunkdataStr.length, reply.length)</span>
+            }
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">            if (!CHUNKED_END_REGEX_PATTERN.equals(reply.substring(chunks[chunks.size - 1].end() + chunkdataStr.length))) {</span>
+<span class="nc" id="L274">                log.debug(&quot;Error Reply: {}&quot;, reply)</span>
+<span class="nc" id="L275">                return false</span>
+            }
+<span class="fc" id="L277">            return true</span>
+        }
+
+        fun createHelloString(capabilities: List&lt;String&gt;): String {
+<span class="fc" id="L281">            val helloMessage = StringBuilder()</span>
+<span class="fc" id="L282">            helloMessage.append(RpcMessageUtils.XML_HEADER).append(NEW_LINE)</span>
+<span class="fc" id="L283">            helloMessage.append(&quot;&lt;hello xmlns=\&quot;urn:ietf:params:xml:ns:netconf:base:1.0\&quot;&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L284">            helloMessage.append(&quot;  &lt;capabilities&gt;&quot;).append(NEW_LINE)</span>
+<span class="pc bpc" id="L285" title="2 of 4 branches missed.">            if (capabilities.isNotEmpty()) {</span>
+<span class="fc" id="L286">                capabilities.forEach { cap -&gt;</span>
+<span class="fc" id="L287">                    helloMessage.append(&quot;    &lt;capability&gt;&quot;).append(cap).append(&quot;&lt;/capability&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L288">                }</span>
+            }
+<span class="fc" id="L290">            helloMessage.append(&quot;  &lt;/capabilities&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L291">            helloMessage.append(&quot;&lt;/hello&gt;&quot;).append(NEW_LINE)</span>
+<span class="fc" id="L292">            helloMessage.append(RpcMessageUtils.END_PATTERN)</span>
+<span class="fc" id="L293">            return helloMessage.toString()</span>
+        }
+
+        fun formatRPCRequest(request: String, messageId: String, deviceCapabilities: Set&lt;String&gt;): String {
+<span class="fc" id="L297">            var req = request</span>
+<span class="fc" id="L298">            req = formatNetconfMessage(deviceCapabilities, req)</span>
+<span class="fc" id="L299">            req = formatXmlHeader(req)</span>
+<span class="fc" id="L300">            req = formatRequestMessageId(req, messageId)</span>
+
+<span class="fc" id="L302">            return req</span>
+        }
+
+        /**
+         * Validate and format netconf message. - NC1.0 if no EOM sequence present on `message`,
+         * append. - NC1.1 chunk-encode given message unless it already is chunk encoded
+         *
+         * @param deviceCapabilities Set containing Device Capabilities
+         * @param message to format
+         * @return formated message
+         */
+        fun formatNetconfMessage(deviceCapabilities: Set&lt;String&gt;, message: String): String {
+<span class="fc" id="L314">            var msg = message</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">            if (deviceCapabilities.contains(RpcMessageUtils.NETCONF_11_CAPABILITY)) {</span>
+<span class="fc" id="L316">                msg = formatChunkedMessage(msg)</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">            } else if (!msg.endsWith(RpcMessageUtils.END_PATTERN)) {</span>
+<span class="fc" id="L318">                msg = msg + NEW_LINE + RpcMessageUtils.END_PATTERN</span>
+            }
+<span class="fc" id="L320">            return msg</span>
+        }
+
+        /**
+         * Validate and format message according to chunked framing mechanism.
+         *
+         * @param message to format
+         * @return formated message
+         */
+        fun formatChunkedMessage(message: String): String {
+<span class="fc" id="L330">            var msg = message</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (msg.endsWith(RpcMessageUtils.END_PATTERN)) {</span>
+                // message given had Netconf 1.0 EOM pattern -&gt; remove
+<span class="fc" id="L333">                msg = msg.substring(0, msg.length - RpcMessageUtils.END_PATTERN.length)</span>
+            }
+<span class="pc bpc" id="L335" title="1 of 2 branches missed.">            if (!msg.startsWith(RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH)) {</span>
+                // chunk encode message
+                msg =
+<span class="fc" id="L338">                    (RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH + msg.toByteArray(UTF_8).size + RpcMessageUtils.NEW_LINE + msg + RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH + RpcMessageUtils.HASH</span>
+                            + RpcMessageUtils.NEW_LINE)
+            }
+<span class="fc" id="L341">            return msg</span>
+        }
+
+        /**
+         * Ensures xml start directive/declaration appears in the `request`.
+         *
+         * @param request RPC request message
+         * @return XML RPC message
+         */
+        fun formatXmlHeader(request: String): String {
+<span class="fc" id="L351">            var req = request</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">            if (!req.contains(RpcMessageUtils.XML_HEADER)) {</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">                if (req.startsWith(RpcMessageUtils.NEW_LINE + RpcMessageUtils.HASH)) {</span>
+                    req =
+<span class="nc bnc" id="L355" title="All 4 branches missed.">                        req.split(&quot;&lt;&quot;.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0] + RpcMessageUtils.XML_HEADER + req.substring(</span>
+<span class="nc bnc" id="L356" title="All 4 branches missed.">                            req.split(&quot;&lt;&quot;.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].length)</span>
+                } else {
+<span class="fc" id="L358">                    req = RpcMessageUtils.XML_HEADER + &quot;\n&quot; + req</span>
+                }
+            }
+<span class="fc" id="L361">            return req</span>
+        }
+
+        fun formatRequestMessageId(request: String, messageId: String): String {
+<span class="fc" id="L365">            var req = request</span>
+<span class="pc bpc" id="L366" title="1 of 2 branches missed.">            if (req.contains(RpcMessageUtils.MESSAGE_ID_STRING)) {</span>
+                req =
+<span class="nc" id="L368">                    req.replaceFirst((RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.NUMBER_BETWEEN_QUOTES_MATCHER).toRegex(),</span>
+<span class="nc" id="L369">                        RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.QUOTE + messageId + RpcMessageUtils.QUOTE)</span>
+<span class="pc bpc" id="L370" title="1 of 4 branches missed.">            } else if (!req.contains(RpcMessageUtils.MESSAGE_ID_STRING) &amp;&amp; !req.contains(</span>
+<span class="fc" id="L371">                    RpcMessageUtils.HELLO)) {</span>
+<span class="fc" id="L372">                req = req.replaceFirst(RpcMessageUtils.END_OF_RPC_OPEN_TAG.toRegex(),</span>
+<span class="fc" id="L373">                    RpcMessageUtils.QUOTE_SPACE + RpcMessageUtils.MESSAGE_ID_STRING + RpcMessageUtils.EQUAL + RpcMessageUtils.QUOTE + messageId + RpcMessageUtils.QUOTE + &quot;&gt;&quot;)</span>
+            }
+<span class="fc" id="L375">            return updateRequestLength(req)</span>
+        }
+
+        fun updateRequestLength(request: String): String {
+<span class="fc bfc" id="L379" title="All 2 branches covered.">            if (request.contains(NEW_LINE + RpcMessageUtils.HASH + RpcMessageUtils.HASH + NEW_LINE)) {</span>
+<span class="fc" id="L380">                val oldLen =</span>
+<span class="pc bpc" id="L381" title="2 of 4 branches missed.">                    Integer.parseInt(request.split(RpcMessageUtils.HASH.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()[1].split(</span>
+<span class="fc bfc" id="L382" title="All 4 branches covered.">                        NEW_LINE.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()[0])</span>
+<span class="fc" id="L383">                val rpcWithEnding = request.substring(request.indexOf('&lt;'))</span>
+<span class="fc" id="L384">                val firstBlock =</span>
+<span class="pc bpc" id="L385" title="2 of 4 branches missed.">                    request.split(RpcMessageUtils.MSGLEN_REGEX_PATTERN.toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()[1].split(</span>
+<span class="fc" id="L386">                        (NEW_LINE + RpcMessageUtils.HASH + RpcMessageUtils.HASH + NEW_LINE).toRegex()).dropLastWhile(</span>
+<span class="fc bfc" id="L387" title="All 4 branches covered.">                        { it.isEmpty() }).toTypedArray()[0]</span>
+<span class="fc" id="L388">                val newLen = firstBlock.toByteArray(UTF_8).size</span>
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">                if (oldLen != newLen) {</span>
+<span class="nc" id="L390">                    return NEW_LINE + RpcMessageUtils.HASH + newLen + NEW_LINE + rpcWithEnding</span>
+                }
+            }
+<span class="fc" id="L393">            return request</span>
+        }
+
+        fun checkReply(reply: String?): Boolean {
+<span class="fc bfc" id="L397" title="All 2 branches covered.">            return if (reply != null) {</span>
+<span class="pc bpc" id="L398" title="1 of 4 branches missed.">                !reply.contains(&quot;rpc-error&gt;&quot;) || reply.contains(&quot;ok/&gt;&quot;)</span>
+<span class="fc" id="L399">            } else false</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

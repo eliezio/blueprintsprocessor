@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BluePrintDmaapClientService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.dmaap</a> &gt; <span class="el_source">BluePrintDmaapClientService.kt</span></div><h1>BluePrintDmaapClientService.kt</h1><pre class="source lang-java linenums">/*-
+ * ============LICENSE_START=======================================================
+ * ONAP - CDS
+ * ================================================================================
+ * Copyright (C) 2019 Huawei Technologies Co., Ltd. All rights reserved.
+ * ================================================================================
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ============LICENSE_END=========================================================
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.dmaap
+
+import com.att.nsa.mr.client.MRBatchingPublisher
+import com.att.nsa.mr.client.MRPublisher
+import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.util.concurrent.TimeUnit
+
+
+/**
+ * Abstraction of DMAAP client services that could form DMAAP client from the
+ * properties provided. This abstraction also provides a mechanism to send
+ * messages with the given partition in a session and closing the same.
+ */
+interface BluePrintDmaapClientService {
+
+    /**
+     * Static variable for logging.
+     */
+<span class="fc" id="L40">    companion object {</span>
+<span class="pc" id="L41">        var log = LoggerFactory.getLogger(</span>
+<span class="fc" id="L42">            BluePrintDmaapClientService::class.java)!!</span>
+    }
+
+    /**
+     * Returns the properly constructed DMAAP client with the type.
+     */
+    fun  getDmaapClient(): MutableList&lt;MRBatchingPublisher&gt;
+
+    /**
+     * Sends messages to the sessions created by the information provided from
+     * application.properties and event.properties file
+     */
+    fun sendMessage(msgs: Collection&lt;String&gt;): Boolean {
+<span class="fc" id="L55">        var success = true</span>
+<span class="fc" id="L56">        val clients = getDmaapClient()</span>
+<span class="fc" id="L57">        val dmaapMsgs = mutableListOf&lt;MRPublisher.message&gt;()</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        for (m in msgs) {</span>
+<span class="fc" id="L59">            dmaapMsgs.add(MRPublisher.message(&quot;1&quot;, m))</span>
+        }
+<span class="fc" id="L61">        log.info(&quot;Sending messages to the DMAAP Server&quot;)</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        for (client in clients) {</span>
+<span class="fc" id="L63">            try {</span>
+<span class="fc" id="L64">                client.send(dmaapMsgs)</span>
+<span class="nc" id="L65">            } catch (e: IOException) {</span>
+<span class="nc" id="L66">                success = false</span>
+<span class="nc" id="L67">                log.error(e.message, e)</span>
+            }
+        }
+<span class="fc" id="L70">        return success</span>
+    }
+
+    /**
+     * Sends message to the sessions created by the information provided from
+     * application.properties and event.properties file
+     */
+    fun sendMessage(msg: String): Boolean {
+<span class="fc" id="L78">        val msgs = mutableListOf&lt;String&gt;()</span>
+<span class="fc" id="L79">        msgs.add(msg)</span>
+<span class="fc" id="L80">        return sendMessage(msgs)</span>
+    }
+
+    /**
+     * Closes the opened session that was used for sending messages.
+     */
+    fun close(timeout: Long): MutableList&lt;MutableList&lt;MRPublisher.message&gt;&gt;? {
+<span class="fc" id="L87">        log.debug(&quot;Closing the DMAAP producer clients&quot;)</span>
+<span class="fc" id="L88">        var msgs: MutableList&lt;MutableList&lt;MRPublisher.message&gt;&gt; =</span>
+<span class="fc" id="L89">            mutableListOf()</span>
+<span class="fc" id="L90">        val clients = getDmaapClient()</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        for (client in clients) {</span>
+<span class="fc" id="L92">            try {</span>
+<span class="fc" id="L93">                var ms = client.close(timeout, TimeUnit.SECONDS)</span>
+<span class="fc" id="L94">                msgs.add(ms)</span>
+<span class="nc" id="L95">            } catch (e: IOException) {</span>
+<span class="nc" id="L96">                log.warn(&quot;Unable to cleanly close the connection from the &quot; +</span>
+<span class="nc" id="L97">                        &quot;client $client&quot;, e)</span>
+            }
+        }
+<span class="fc" id="L100">        return msgs</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

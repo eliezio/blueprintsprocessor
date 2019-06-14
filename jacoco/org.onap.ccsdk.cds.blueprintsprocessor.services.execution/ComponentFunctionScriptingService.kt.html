@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComponentFunctionScriptingService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.services.execution</a> &gt; <span class="el_source">ComponentFunctionScriptingService.kt</span></div><h1>ComponentFunctionScriptingService.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2018 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.services.execution
+
+import org.onap.ccsdk.cds.blueprintsprocessor.services.execution.scripts.BlueprintJythonService
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintConstants
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BluePrintScriptsService
+import org.onap.ccsdk.cds.controllerblueprints.core.interfaces.BlueprintFunctionNode
+import org.onap.ccsdk.cds.controllerblueprints.core.service.BluePrintContext
+import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationContext
+import org.springframework.stereotype.Service
+
+@Service
+<span class="fc" id="L30">class ComponentFunctionScriptingService(private val applicationContext: ApplicationContext,</span>
+                                        private val bluePrintScriptsService: BluePrintScriptsService,
+                                        private val blueprintJythonService: BlueprintJythonService) {
+
+<span class="fc" id="L34">    private val log = LoggerFactory.getLogger(ComponentFunctionScriptingService::class.java)</span>
+
+    suspend fun &lt;T : AbstractScriptComponentFunction&gt; scriptInstance(componentFunction: AbstractComponentFunction,
+    scriptType: String,
+                                                             scriptClassReference: String,
+                                                             instanceDependencies: List&lt;String&gt;): T {
+
+<span class="fc" id="L41">        log.info(&quot;creating component function of script type($scriptType), reference name($scriptClassReference) and &quot; +</span>
+<span class="fc" id="L42">                &quot;instanceDependencies($instanceDependencies)&quot;)</span>
+
+<span class="fc" id="L44">        val scriptComponent: T = scriptInstance(componentFunction.bluePrintRuntimeService.bluePrintContext(),</span>
+<span class="fc" id="L45">                scriptType, scriptClassReference)</span>
+
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        checkNotNull(scriptComponent) { &quot;failed to initialize script component&quot; }</span>
+
+<span class="fc" id="L49">        scriptComponent.bluePrintRuntimeService = componentFunction.bluePrintRuntimeService</span>
+<span class="fc" id="L50">        scriptComponent.processId = componentFunction.processId</span>
+<span class="fc" id="L51">        scriptComponent.workflowName = componentFunction.workflowName</span>
+<span class="fc" id="L52">        scriptComponent.stepName = componentFunction.stepName</span>
+<span class="fc" id="L53">        scriptComponent.interfaceName = componentFunction.interfaceName</span>
+<span class="fc" id="L54">        scriptComponent.operationName = componentFunction.operationName</span>
+<span class="fc" id="L55">        scriptComponent.nodeTemplateName = componentFunction.nodeTemplateName</span>
+<span class="fc" id="L56">        scriptComponent.operationInputs = componentFunction.operationInputs</span>
+<span class="fc" id="L57">        scriptComponent.scriptType = scriptType</span>
+
+        // Populate Instance Properties
+<span class="fc" id="L60">        instanceDependencies.forEach { instanceDependency -&gt;</span>
+<span class="fc" id="L61">            scriptComponent.functionDependencyInstances[instanceDependency] = applicationContext</span>
+<span class="fc" id="L62">                    .getBean(instanceDependency)</span>
+<span class="fc" id="L63">        }</span>
+<span class="fc" id="L64">        return scriptComponent</span>
+    }
+
+
+    suspend fun &lt;T : BlueprintFunctionNode&lt;*, *&gt;&gt; scriptInstance(bluePrintContext: BluePrintContext, scriptType: String,
+                                                         scriptClassReference: String): T {
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">        return when (scriptType) {</span>
+            BluePrintConstants.SCRIPT_INTERNAL -&gt; {
+<span class="fc" id="L72">                bluePrintScriptsService.scriptInstance(scriptClassReference)</span>
+            }
+            BluePrintConstants.SCRIPT_KOTLIN -&gt; {
+<span class="fc" id="L75">                bluePrintScriptsService.scriptInstance(bluePrintContext, scriptClassReference, false)</span>
+            }
+            BluePrintConstants.SCRIPT_JYTHON -&gt; {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">                blueprintJythonService.jythonComponentInstance(bluePrintContext, scriptClassReference) as T</span>
+            }
+<span class="nc" id="L80">            else -&gt; throw BluePrintProcessorException(&quot;script type($scriptType) is not supported&quot;)</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

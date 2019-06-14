@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeviceInfo.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api</a> &gt; <span class="el_source">DeviceInfo.kt</span></div><h1>DeviceInfo.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.netconf.executor.api
+
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
+
+<span class="fc" id="L22">class DeviceInfo {</span>
+    @get:JsonProperty(&quot;login-account&quot;)
+<span class="fc" id="L24">    var username: String? = null</span>
+    @get:JsonProperty(&quot;login-key&quot;)
+<span class="fc" id="L26">    var password: String? = null</span>
+    @get:JsonProperty(&quot;target-ip-address&quot;)
+<span class="fc" id="L28">    var ipAddress: String? = null</span>
+    @get:JsonProperty(&quot;port-number&quot;)
+<span class="fc" id="L30">    var port: Int = 0</span>
+    @get:JsonProperty(&quot;connection-time-out&quot;)
+<span class="fc" id="L32">    var connectTimeout: Long = 5</span>
+    @get:JsonIgnore
+<span class="nc" id="L34">    var source: String? = null</span>
+    @get:JsonIgnore
+<span class="pc" id="L36">    var replyTimeout: Int = 5</span>
+    @get:JsonIgnore
+<span class="pc" id="L38">    var idleTimeout: Int = 99999</span>
+
+    override fun toString(): String {
+<span class="fc" id="L41">        return &quot;$ipAddress:$port&quot;</span>
+    }
+    //TODO: should this be a data class instead? Is anything using the JSON serdes?
+    override fun equals(other: Any?): Boolean {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (this === other) return true</span>
+<span class="pc bpc" id="L46" title="2 of 4 branches missed.">        if (javaClass != other?.javaClass) return false</span>
+<span class="fc" id="L47">        return true</span>
+    }
+
+    override fun hashCode(): Int {
+<span class="nc" id="L51">        return javaClass.hashCode()</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InputResourceResolutionProcessor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor</a> &gt; <span class="el_source">InputResourceResolutionProcessor.kt</span></div><h1>InputResourceResolutionProcessor.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2017-2018 AT&amp;T Intellectual Property.
+ *  Modifications Copyright © 2018 IBM.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.processor
+
+import com.fasterxml.jackson.databind.node.MissingNode
+import com.fasterxml.jackson.databind.node.NullNode
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.ResourceResolutionConstants.PREFIX_RESOURCE_RESOLUTION_PROCESSOR
+import org.onap.ccsdk.cds.blueprintsprocessor.functions.resource.resolution.utils.ResourceAssignmentUtils
+import org.onap.ccsdk.cds.controllerblueprints.core.BluePrintProcessorException
+import org.onap.ccsdk.cds.controllerblueprints.core.isNotEmpty
+import org.onap.ccsdk.cds.controllerblueprints.resource.dict.ResourceAssignment
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.context.annotation.Scope
+import org.springframework.stereotype.Service
+
+/**
+ * InputResourceResolutionProcessor
+ *
+ * @author Kapil Singal
+ */
+@Service(&quot;${PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-input&quot;)
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+<span class="pc" id="L39">open class InputResourceResolutionProcessor : ResourceAssignmentProcessor() {</span>
+
+<span class="fc" id="L41">    private val logger = LoggerFactory.getLogger(InputResourceResolutionProcessor::class.java)</span>
+
+    override fun getName(): String {
+<span class="nc" id="L44">        return &quot;${PREFIX_RESOURCE_RESOLUTION_PROCESSOR}source-input&quot;</span>
+    }
+
+    override suspend fun processNB(resourceAssignment: ResourceAssignment) {
+<span class="fc" id="L48">        try {</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (isNotEmpty(resourceAssignment.name)) {</span>
+<span class="fc" id="L50">                val value = raRuntimeService.getInputValue(resourceAssignment.name)</span>
+                // if value is null don't call setResourceDataValue to populate the value
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">                if (value !is MissingNode &amp;&amp; value !is NullNode) {</span>
+<span class="fc" id="L53">                    logger.info(&quot;input source template key (${resourceAssignment.name}) found from input and value is ($value)&quot;)</span>
+<span class="fc" id="L54">                    ResourceAssignmentUtils.setResourceDataValue(resourceAssignment, raRuntimeService, value)</span>
+                }
+            }
+            // Check the value has populated for mandatory case
+<span class="fc" id="L58">            ResourceAssignmentUtils.assertTemplateKeyValueNotNull(resourceAssignment)</span>
+<span class="nc" id="L59">        } catch (e: Exception) {</span>
+<span class="nc" id="L60">            ResourceAssignmentUtils.setFailedResourceDataValue(resourceAssignment, e.message)</span>
+<span class="nc" id="L61">            throw BluePrintProcessorException(&quot;Failed in template key ($resourceAssignment) assignments with : (${e.message})&quot;, e)</span>
+        }
+<span class="fc" id="L63">    }</span>
+
+    override suspend fun recoverNB(runtimeException: RuntimeException, resourceAssignment: ResourceAssignment) {
+<span class="nc" id="L66">        raRuntimeService.getBluePrintError().addError(runtimeException.message!!)</span>
+<span class="nc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComponentRemoteAnsibleExecutor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">blueprintsprocessor</a> &gt; <a href="index.source.html" class="el_package">org.onap.ccsdk.cds.blueprintsprocessor.functions.ansible.executor</a> &gt; <span class="el_source">ComponentRemoteAnsibleExecutor.kt</span></div><h1>ComponentRemoteAnsibleExecutor.kt</h1><pre class="source lang-java linenums">/*
+ *  Copyright © 2019 Bell Canada.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.onap.ccsdk.cds.blueprintsprocessor.functions.ansible.executor
+
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
+import java.net.URLEncoder
+import java.util.NoSuchElementException
+import org.onap.ccsdk.cds.blueprintsprocessor.core.api.data.*
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BluePrintRestLibPropertyService
+import org.onap.ccsdk.cds.blueprintsprocessor.rest.service.BlueprintWebClientService
+import org.onap.ccsdk.cds.blueprintsprocessor.services.execution.AbstractComponentFunction
+import org.onap.ccsdk.cds.controllerblueprints.core.*
+import org.onap.ccsdk.cds.controllerblueprints.core.utils.JacksonUtils
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
+import org.springframework.context.annotation.Scope
+import org.springframework.http.HttpMethod
+import org.springframework.stereotype.Component
+import kotlin.text.Charsets.UTF_8
+
+/**
+ * ComponentRemoteAnsibleExecutor
+ *
+ * Component that launches a run of a job template (INPUT_JOB_TEMPLATE_NAME) representing an Ansible playbook,
+ * and its parameters, via the AWX server identified by the INPUT_ENDPOINT_SELECTOR parameter.
+ *
+ * It supports extra_vars, limit, tags, skip-tags, inventory (by name or Id) Ansible parameters.
+ * It reports the results of the execution via properties, named execute-command-status and execute-command-logs
+ *
+ * @author Serge Simard
+ */
+@Component(&quot;component-remote-ansible-executor&quot;)
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+<span class="pc" id="L50">open class ComponentRemoteAnsibleExecutor(private val blueprintRestLibPropertyService: BluePrintRestLibPropertyService,</span>
+                                          private val mapper: ObjectMapper)
+<span class="fc" id="L52">    : AbstractComponentFunction() {</span>
+
+    // HTTP related constants
+<span class="fc" id="L55">    private val HTTP_SUCCESS = 200..202</span>
+<span class="fc" id="L56">    private val GET = HttpMethod.GET.name</span>
+<span class="fc" id="L57">    private val POST = HttpMethod.POST.name</span>
+
+<span class="pc" id="L59">    var checkDelay: Long = 1_000</span>
+
+    companion object {
+<span class="fc" id="L62">        private val log = LoggerFactory.getLogger(ComponentRemoteAnsibleExecutor::class.java)</span>
+
+        // input fields names accepted by this executor
+        const val INPUT_ENDPOINT_SELECTOR = &quot;endpoint-selector&quot;
+        const val INPUT_JOB_TEMPLATE_NAME = &quot;job-template-name&quot;
+        const val INPUT_LIMIT_TO_HOST = &quot;limit&quot;
+        const val INPUT_INVENTORY = &quot;inventory&quot;
+        const val INPUT_EXTRA_VARS = &quot;extra-vars&quot;
+        const val INPUT_TAGS = &quot;tags&quot;
+        const val INPUT_SKIP_TAGS = &quot;skip-tags&quot;
+
+        // output fields names (and values) populated by this executor; aligned with job details status field values.
+        const val ATTRIBUTE_EXEC_CMD_STATUS = &quot;ansible-command-status&quot;
+        const val ATTRIBUTE_EXEC_CMD_LOG = &quot;ansible-command-logs&quot;
+        const val ATTRIBUTE_EXEC_CMD_STATUS_ERROR = &quot;error&quot;
+    }
+
+    override suspend fun processNB(executionRequest: ExecutionServiceInput) {
+
+<span class="fc" id="L81">        try {</span>
+<span class="fc" id="L82">            val restClientService = getAWXRestClient()</span>
+
+<span class="fc" id="L84">            val jobTemplateName = getOperationInput(INPUT_JOB_TEMPLATE_NAME).asText()</span>
+<span class="fc" id="L85">            val jtId = lookupJobTemplateIDByName(restClientService, jobTemplateName)</span>
+<span class="pc bpc" id="L86" title="2 of 4 branches missed.">            if (jtId.isNotEmpty()) {</span>
+<span class="fc" id="L87">                runJobTemplateOnAWX(restClientService, jobTemplateName, jtId)</span>
+            } else {
+<span class="nc" id="L89">                val message = &quot;Job template $jobTemplateName does not exists&quot;</span>
+<span class="nc" id="L90">                log.error(message)</span>
+<span class="nc" id="L91">                setNodeOutputErrors(ATTRIBUTE_EXEC_CMD_STATUS_ERROR, message)</span>
+<span class="nc" id="L92">            }</span>
+<span class="fc" id="L93">        } catch (e: Exception) {</span>
+<span class="fc" id="L94">            log.error(&quot;Failed to process on remote executor (${e.message})&quot;, e)</span>
+<span class="fc" id="L95">            setNodeOutputErrors(ATTRIBUTE_EXEC_CMD_STATUS_ERROR, &quot;Failed to process on remote executor (${e.message})&quot;)</span>
+        }
+<span class="fc" id="L97">    }</span>
+
+
+    override suspend fun recoverNB(runtimeException: RuntimeException, executionRequest: ExecutionServiceInput) {
+<span class="nc" id="L101">        val message = &quot;Error in ComponentRemoteAnsibleExecutor : ${runtimeException.message}&quot;</span>
+<span class="nc" id="L102">        log.error(message,runtimeException)</span>
+<span class="nc" id="L103">        setNodeOutputErrors(ATTRIBUTE_EXEC_CMD_STATUS_ERROR, message)</span>
+<span class="nc" id="L104">    }</span>
+
+    /** Creates a TokenAuthRestClientService, since this executor expect type property to be &quot;token-auth&quot; and the
+     * token to be an OAuth token (access_token response field) generated via the AWX /api/o/token rest endpoint
+     * The token field is of the form &quot;Bearer access_token_from_response&quot;, for example :
+     *  &quot;blueprintsprocessor.restclient.awx.type=token-auth&quot;
+     *  &quot;blueprintsprocessor.restclient.awx.url=http://awx-endpoint&quot;
+     *  &quot;blueprintsprocessor.restclient.awx.token=Bearer J9gEtMDzxcqw25574fioY9VAhLDIs1&quot;
+     *
+     * Also supports json endpoint definition via DSL entry, e.g.:
+     *     &quot;ansible-remote-endpoint&quot;: {
+     *        &quot;type&quot;: &quot;token-auth&quot;,
+     *        &quot;url&quot;: &quot;http://awx-endpoint&quot;,
+     *        &quot;token&quot;: &quot;Bearer J9gEtMDzxcqw25574fioY9VAhLDIs1&quot;
+     *     }
+     */
+    private fun getAWXRestClient(): BlueprintWebClientService {
+
+<span class="fc" id="L122">        val endpointSelector = getOperationInput(INPUT_ENDPOINT_SELECTOR)</span>
+
+<span class="fc" id="L124">        try {</span>
+<span class="fc" id="L125">            return blueprintRestLibPropertyService.blueprintWebClientService(endpointSelector)</span>
+<span class="nc" id="L126">        } catch (e : NoSuchElementException) {</span>
+<span class="nc" id="L127">            throw IllegalArgumentException(&quot;No value provided for input selector $endpointSelector&quot;, e)</span>
+        }
+    }
+
+    /**
+     * Finds the job template ID based on the job template name provided in the request
+     */
+    private fun lookupJobTemplateIDByName(awxClient : BlueprintWebClientService, jobTemplateName: String?): String {
+        // Get Job Template details by name
+<span class="fc" id="L136">        val response = awxClient.exchangeResource(GET, &quot;/api/v2/job_templates/$jobTemplateName/&quot;, &quot;&quot;)</span>
+<span class="fc" id="L137">        val jtDetails: JsonNode = mapper.readTree(response.body)</span>
+<span class="fc" id="L138">        return jtDetails.at(&quot;/id&quot;).asText()</span>
+    }
+
+    /**
+     * Performs the job template execution on AWX, ie. prepare arguments as per job template
+     * requirements (ask fields) and provided overriding values. Then it launches the run, and monitors
+     * its execution. Finally, it retrieves the job results via the stdout api.
+     * The status and output attributes are populated in the process.
+     */
+    private fun runJobTemplateOnAWX(awxClient : BlueprintWebClientService, jobTemplateName: String?, jtId: String) {
+<span class="fc" id="L148">        setNodeOutputProperties( &quot;preparing&quot;.asJsonPrimitive(), &quot;&quot;.asJsonPrimitive())</span>
+
+        // Get Job Template requirements
+<span class="fc" id="L151">        var response = awxClient.exchangeResource(GET, &quot;/api/v2/job_templates/$jtId/launch/&quot;,&quot;&quot;)</span>
+        // FIXME: handle non-successful SC
+<span class="fc" id="L153">        val jtLaunchReqs: JsonNode = mapper.readTree(response.body)</span>
+<span class="fc" id="L154">        val payload = prepareLaunchPayload(awxClient, jtLaunchReqs)</span>
+<span class="fc" id="L155">        log.info(&quot;Running job with $payload, for requestId $processId.&quot;)</span>
+
+        // Launch the job for the targeted template
+<span class="fc" id="L158">        var jtLaunched : JsonNode = JacksonUtils.jsonNode(&quot;{}&quot;) as ObjectNode</span>
+<span class="fc" id="L159">        response = awxClient.exchangeResource(POST, &quot;/api/v2/job_templates/$jtId/launch/&quot;, payload)</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        if (response.status in HTTP_SUCCESS) {</span>
+<span class="fc" id="L161">            jtLaunched = mapper.readTree(response.body)</span>
+<span class="fc" id="L162">            val fieldsIgnored: JsonNode = jtLaunched.at(&quot;/ignored_fields&quot;)</span>
+<span class="fc" id="L163">            log.warn(&quot;Ignored fields : $fieldsIgnored, for requestId $processId.&quot;)</span>
+        }
+
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (response.status in HTTP_SUCCESS) {</span>
+<span class="fc" id="L167">            val jobId: String = jtLaunched.at(&quot;/id&quot;).asText()</span>
+
+            // Poll current job status while job is not executed
+<span class="fc" id="L170">            var jobStatus = &quot;unknown&quot;</span>
+<span class="fc" id="L171">            var jobEndTime = &quot;null&quot;</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            while (jobEndTime == &quot;null&quot;) {</span>
+<span class="fc" id="L173">                response = awxClient.exchangeResource(GET, &quot;/api/v2/jobs/$jobId/&quot;, &quot;&quot;)</span>
+<span class="fc" id="L174">                val jobLaunched: JsonNode = mapper.readTree(response.body)</span>
+<span class="fc" id="L175">                jobStatus = jobLaunched.at(&quot;/status&quot;).asText()</span>
+<span class="fc" id="L176">                jobEndTime = jobLaunched.at(&quot;/finished&quot;).asText()</span>
+<span class="fc" id="L177">                Thread.sleep(checkDelay)</span>
+            }
+
+<span class="fc" id="L180">            log.info(&quot;Execution of job template $jobTemplateName in job #$jobId finished with status ($jobStatus) for requestId $processId&quot;)</span>
+
+            // Get job execution results (stdout)
+<span class="fc" id="L183">            val plainTextHeaders = mutableMapOf&lt;String, String&gt;()</span>
+<span class="fc" id="L184">            plainTextHeaders[&quot;Content-Type&quot;] = &quot;text/plain ;utf-8&quot;</span>
+<span class="fc" id="L185">            response = awxClient.exchangeResource(GET, &quot;/api/v2/jobs/$jobId/stdout/?format=txt&quot;,&quot;&quot;, plainTextHeaders)</span>
+
+<span class="fc" id="L187">            setNodeOutputProperties( jobStatus.asJsonPrimitive(), response.body.asJsonPrimitive())</span>
+        } else {
+            // The job template requirements were not fulfilled with the values passed in. The message below will
+            // provide more information via the response, like the ignored_fields, or variables_needed_to_start,
+            // or resources_needed_to_start, in order to help user pinpoint the problems with the request.
+<span class="fc" id="L192">            val message = &quot;Execution of job template $jobTemplateName could not be started for requestId $processId.&quot; +</span>
+<span class="fc" id="L193">                    &quot; (Response: ${response.body}) &quot;</span>
+<span class="fc" id="L194">            log.error(message)</span>
+<span class="fc" id="L195">            setNodeOutputErrors( ATTRIBUTE_EXEC_CMD_STATUS_ERROR, message)</span>
+        }
+<span class="fc" id="L197">    }</span>
+
+    /**
+     * Prepares the JSON payload expected by the job template api,
+     * by applying the overrides that were provided
+     * and allowed by the template definition flags in jtLaunchReqs
+     */
+    private fun prepareLaunchPayload(awxClient : BlueprintWebClientService, jtLaunchReqs: JsonNode): String {
+<span class="fc" id="L205">        val payload = JacksonUtils.jsonNode(&quot;{}&quot;) as ObjectNode</span>
+
+        // Parameter defaults
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">        val limitProp = getOptionalOperationInput(INPUT_LIMIT_TO_HOST)?.asText()</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        val tagsProp = getOptionalOperationInput(INPUT_TAGS)?.asText()</span>
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        val skipTagsProp = getOptionalOperationInput(INPUT_SKIP_TAGS)?.asText()</span>
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">        val inventoryProp : String? = getOptionalOperationInput(INPUT_INVENTORY)?.asText()</span>
+<span class="fc" id="L212">        val extraArgs : JsonNode = getOperationInput(INPUT_EXTRA_VARS)</span>
+
+<span class="fc" id="L214">        val askLimitOnLaunch = jtLaunchReqs.at( &quot;/ask_limit_on_launch&quot;).asBoolean()</span>
+<span class="pc bpc" id="L215" title="1 of 6 branches missed.">        if (askLimitOnLaunch &amp;&amp; limitProp!!.isNotEmpty()) {</span>
+<span class="fc" id="L216">            payload.put(INPUT_LIMIT_TO_HOST, limitProp)</span>
+        }
+<span class="fc" id="L218">        val askTagsOnLaunch = jtLaunchReqs.at(&quot;/ask_tags_on_launch&quot;).asBoolean()</span>
+<span class="pc bpc" id="L219" title="1 of 6 branches missed.">        if (askTagsOnLaunch &amp;&amp; tagsProp!!.isNotEmpty()) {</span>
+<span class="fc" id="L220">            payload.put(INPUT_TAGS, tagsProp)</span>
+        }
+<span class="pc bpc" id="L222" title="1 of 6 branches missed.">        if (askTagsOnLaunch &amp;&amp; skipTagsProp!!.isNotEmpty()) {</span>
+<span class="fc" id="L223">            payload.put(&quot;skip_tags&quot;, skipTagsProp)</span>
+        }
+<span class="fc" id="L225">        val askInventoryOnLaunch = jtLaunchReqs.at(&quot;/ask_inventory_on_launch&quot;).asBoolean()</span>
+<span class="pc bpc" id="L226" title="2 of 4 branches missed.">        if (askInventoryOnLaunch &amp;&amp; inventoryProp != null) {</span>
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            val inventoryKeyId = inventoryProp.toIntOrNull() ?: resolveInventoryIdByName(awxClient, inventoryProp)</span>
+<span class="fc" id="L228">            payload.put(INPUT_INVENTORY, inventoryKeyId)</span>
+        }
+<span class="fc" id="L230">        val askVariablesOnLaunch = jtLaunchReqs.at(&quot;/ask_variables_on_launch&quot;).asBoolean()</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">        if (askVariablesOnLaunch) {</span>
+<span class="fc" id="L232">            payload.set(&quot;extra_vars&quot;, extraArgs)</span>
+        }
+
+<span class="fc" id="L235">        return payload.toString()</span>
+    }
+
+    private fun resolveInventoryIdByName(awxClient : BlueprintWebClientService, inventoryProp: String): Int {
+<span class="fc" id="L239">        var invId : Int? = null</span>
+
+        // Get Inventory by name
+<span class="fc" id="L242">        val encoded = URLEncoder.encode(inventoryProp, UTF_8.name())</span>
+<span class="fc" id="L243">        val response = awxClient.exchangeResource(GET,&quot;/api/v2/inventories/?name=$encoded&quot;,&quot;&quot;)</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        if (response.status in HTTP_SUCCESS) {</span>
+            // Extract the inventory ID from response
+<span class="fc" id="L246">            val invDetails = mapper.readTree(response.body)</span>
+<span class="fc" id="L247">            val nbInvFound = invDetails.at(&quot;/count&quot;).asInt()</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">            if (nbInvFound == 1) {</span>
+<span class="fc" id="L249">                invId = invDetails[&quot;results&quot;][0][&quot;id&quot;].asInt()</span>
+<span class="fc" id="L250">                log.info(&quot;Resolved inventory $inventoryProp to ID #: $invId&quot;)</span>
+            }
+        }
+
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        if (invId == null) {</span>
+<span class="fc" id="L255">            val message = &quot;Could not resolve inventory $inventoryProp by name...&quot;</span>
+<span class="fc" id="L256">            log.error(message)</span>
+<span class="fc" id="L257">            throw IllegalArgumentException(message)</span>
+        }
+
+<span class="fc" id="L260">        return invId</span>
+    }
+
+    /**
+     * Utility function to set the output properties of the executor node
+     */
+    private fun setNodeOutputProperties(status: JsonNode, message: JsonNode) {
+<span class="fc" id="L267">        setAttribute(ATTRIBUTE_EXEC_CMD_STATUS, status)</span>
+<span class="fc" id="L268">        log.info(&quot;Executor status: $status&quot;)</span>
+<span class="fc" id="L269">        setAttribute(ATTRIBUTE_EXEC_CMD_LOG, message)</span>
+<span class="fc" id="L270">        log.info(&quot;Executor message: $message&quot;)</span>
+<span class="fc" id="L271">    }</span>
+
+    /**
+     * Utility function to set the output properties and errors of the executor node, in cas of errors
+     */
+    @Suppress(&quot;SameParameterValue&quot;)
+    private fun setNodeOutputErrors(status: String, message: String) {
+<span class="fc" id="L278">        setAttribute(ATTRIBUTE_EXEC_CMD_STATUS, status.asJsonPrimitive())</span>
+<span class="fc" id="L279">        setAttribute(ATTRIBUTE_EXEC_CMD_LOG, message.asJsonPrimitive())</span>
+
+<span class="fc" id="L281">        addError(status, ATTRIBUTE_EXEC_CMD_LOG, message)</span>
+<span class="fc" id="L282">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>
